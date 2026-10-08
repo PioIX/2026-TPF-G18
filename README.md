@@ -95,11 +95,11 @@ El proyecto se desarrolla entre el 28/09 y el 20/11, fecha de la Expo Pío. A co
 | 6 | Control de roles | Julián | 20/10 |
 | 7 | Perfil de usuario | Francisco | 22/10 |
 | 8 | Gestión de chats por HTTP | Todos | 24/10 |
-| 9 | Mensajes por HTTP | Todos | 27/10 |
+| 9 | Mensajes por HTTP | Todos | 28/10 |
 | 10 | Servidor de WebSockets | Faustino - Julián | 31/10 |
 | 11 | Cliente de WebSockets | Francisco - Santiago | 03/11 |
 | 12 | Chat en tiempo real | Faustino | 05/11 |
-| 13 | Editar y eliminar mensajes | Francisco - Santiago | 07/11 |
+| 13 | Editar y eliminar mensajes | Francisco - Santiago | 10/11 |
 | 14 | Panel de administración | Julián | 12/11 |
 | 15 | Comunicados | Santiago | 14/11 |
 | 16 | Moderación | Santiago | 15/11 |
@@ -107,7 +107,47 @@ El proyecto se desarrolla entre el 28/09 y el 20/11, fecha de la Expo Pío. A co
 | 18 | Documentación y cierre | Todos | 21/11 |
 | 19 | Preparar la presentación | Todos | 22/11 |
 
-Se definieron tres hitos a lo largo del período de desarrollo. El primer hito, con fecha de finalización el 28/10, consiste en tener una base funcional: un usuario puede registrarse, iniciar sesión, ver su perfil y crear chats, todo mediante peticiones HTTP con Fetch, con la base de datos ya creada y la autenticación por roles funcionando. El segundo hito, el 10/11, consiste en tener el chat en tiempo real: los WebSockets funcionando, mensajes que llegan de forma instantánea en chats privados y grupales, y la posibilidad de editar y eliminar mensajes. El tercer hito, el 17/11, es el producto completo: el panel de administración y los comunicados terminados, todas las funciones probadas y la documentación finalizada, de modo que el último día quede disponible para ensayar la presentación.
+## Explicación de las tareas
+
+1. **Preparar el repositorio:** crear el repositorio del proyecto, organizar las carpetas de frontend, backend y documentación, configurar el .gitignore, realizar el README inicial y establecer las ramas e Issues para organizar el trabajo.
+
+2. **Diseñar la base de datos:** finalizar el DER, definir las tablas, relaciones, claves primarias y foráneas, crear el script.sql y preparar algunos datos de prueba para poder comenzar con el desarrollo.
+
+3. **Armar la estructura del backend:** configurar el proyecto de Node.js, instalar las dependencias necesarias, crear el index.js, configurar la conexión a MySQL mediante mysql.js y dejar preparada la estructura para las rutas y endpoints.
+
+4. **Armar la estructura del frontend:** crear el proyecto en Next.js, configurar el layout general, definir la identidad visual y preparar los componentes reutilizables que se utilizarán durante el desarrollo.
+
+5. **Login y registro:** desarrollar el registro de usuarios y el inicio de sesión, almacenar las contraseñas de forma segura mediante hash, implementar JWT y crear las pantallas correspondientes en el frontend.
+
+6. **Control de roles:** implementar la autenticación y autorización para diferenciar alumnos, docentes y administradores, protegiendo las rutas y funcionalidades según el rol de cada usuario.
+
+7. **Perfil de usuario:** permitir que cada usuario consulte y modifique sus datos personales y pueda subir o actualizar su foto de perfil.
+
+8. **Gestión de chats por HTTP:** desarrollar la creación de chats privados y grupales, el listado de conversaciones y la posibilidad de agregar o quitar participantes.
+
+9. **Mensajes por HTTP:** crear los endpoints necesarios para obtener el historial de mensajes y desarrollar la interfaz que permita visualizar las conversaciones existentes.
+
+10. **Servidor de WebSockets:** configurar Socket.IO en el backend, crear las salas correspondientes a cada chat e implementar la autenticación de las conexiones mediante sockets.
+
+11. **Cliente de WebSockets:** conectar el frontend con Socket.IO mediante el hook useSocket.js, permitiendo que la aplicación se conecte al servidor y reciba eventos en tiempo real.
+
+12. **Chat en tiempo real:** implementar el envío y recepción instantánea de mensajes, además de actualizar automáticamente la lista de chats cuando se produzcan nuevos mensajes.
+
+13. **Editar y eliminar mensajes:** desarrollar los endpoints y eventos necesarios para editar y eliminar mensajes, incluyendo la marca de mensaje editado y la sincronización de estos cambios en tiempo real.
+
+14. **Panel de administración:** crear un panel desde el cual los administradores puedan gestionar usuarios y cursos, además de realizar las asignaciones correspondientes.
+
+15. **Comunicados:** permitir que los administradores o usuarios autorizados creen, consulten y eliminen comunicados, incorporando avisos en tiempo real para informar a los usuarios.
+
+16. **Moderación:** implementar herramientas administrativas para desactivar usuarios y chats cuando sea necesario, restringiendo estas acciones únicamente a los usuarios autorizados.
+
+17. **Pruebas y correcciones:** probar las funcionalidades del sistema, detectar y corregir errores, verificar la comunicación entre frontend y backend y adaptar la interfaz para que funcione correctamente en celulares.
+
+18. **Documentación y cierre:** actualizar el DER y el script.sql, completar el README, preparar el usuario administrador, cargar los datos de prueba y dejar documentado el funcionamiento final del proyecto.
+
+19. **Preparar la presentación:** organizar la demostración del proyecto, definir qué funcionalidades mostrará cada integrante, preparar el guion de exposición y realizar ensayos antes de la Expo Pío.
+
+Se definieron tres hitos a lo largo del período de desarrollo. El primer hito, con fecha de finalización el 28/10, consiste en tener una base funcional: un usuario puede registrarse, iniciar sesión, ver su perfil y crear chats, todo mediante peticiones HTTP con Fetch, con la base de datos ya creada y la autenticación por roles funcionando. El segundo hito, el 10/11, consiste en tener el chat en tiempo real: los WebSockets funcionando, mensajes que llegan de forma instantánea en chats privados y grupales, y la posibilidad de editar y eliminar mensajes. El tercer hito, el 17/11, es el producto completo: el panel de administración y los comunicados terminados, todas las funciones probadas y la documentación finalizada, de modo que los últimos días queden disponibles para corregir errores y preparar la presentación.
 
 Otras fechas importantes son el 07/10, día de la devolución de las propuestas, el 20/11, día de la Expo Pío, y desde el 25/11 los coloquios individuales.
 
