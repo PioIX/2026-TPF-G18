@@ -85,27 +85,27 @@ Se tomaron algunas decisiones de diseño. Para distinguir los chats privados de 
 
 El proyecto se desarrolla entre el 28/09 y el 20/11, fecha de la Expo Pío. A continuación se detallan las tareas, sus responsables y las fechas estimadas de finalización.
 
-| N° | Objetivo | Tareas asociadas | Responsables | Fecha estimada |
-|---|---|---|---|---|
-| 1 | Preparar el repositorio | Crear el repositorio 2026-TPF-Gxx, la estructura de carpetas, el .gitignore, el README con el presupuesto, las ramas y los primeros Issues | Todos | 08/10 |
-| 2 | Diseñar la base de datos | DER final, script.sql, tablas, claves y datos de prueba | [Integrante 2] | 13/10 |
-| 3 | Armar la estructura del backend | index.js, package.json, módulo mysql.js, conexión a MySQL y estructura de rutas | [Integrante 3] | 15/10 |
-| 4 | Armar la estructura del frontend | Proyecto Next.js, layout, componentes base e identidad visual | [Integrante 4] | 15/10 |
-| 5 | Login y registro | Endpoints de registro y login, hash de contraseñas, JWT y pantallas de login y registro | [Integrante 1] y [Integrante 4] | 22/10 |
-| 6 | Control de roles | Middleware de autenticación y autorización, rutas protegidas según el rol | [Integrante 1] | 24/10 |
-| 7 | Perfil de usuario | Ver y editar el perfil, subir y guardar la foto | [Integrante 4] | 27/10 |
-| 8 | Gestión de chats por HTTP | Crear chats privados y grupales, listar chats, agregar y quitar participantes | [Integrante 2] | 27/10 |
-| 9 | Mensajes por HTTP | Endpoint del historial de mensajes y pantalla de chat con el listado | [Integrante 2] y [Integrante 4] | 30/10 |
-| 10 | Servidor de WebSockets | Configurar Socket.IO en el backend, salas por chat y autenticación del socket | [Integrante 3] | 03/11 |
-| 11 | Cliente de WebSockets | Hook useSocket.js, conexión desde el frontend y recepción de mensajes | [Integrante 3] y [Integrante 4] | 05/11 |
-| 12 | Chat en tiempo real | Envío y recepción instantánea y actualización de la lista de chats | [Integrante 3] | 06/11 |
-| 13 | Editar y eliminar mensajes | Endpoints, marca de editado y sincronización en tiempo real | [Integrante 1] y [Integrante 3] | 09/11 |
-| 14 | Panel de administración | CRUD de usuarios y de cursos, asignación de usuarios a cursos | [Integrante 2] y [Integrante 1] | 12/11 |
-| 15 | Comunicados | Crear, listar y eliminar comunicados, con aviso en tiempo real | [Integrante 4] y [Integrante 3] | 13/11 |
-| 16 | Moderación | Desactivar usuarios y chats desde el panel de administración | [Integrante 1] | 14/11 |
-| 17 | Pruebas y correcciones | Probar todas las funciones, corregir errores y adaptar la interfaz al celular | Todos | 16/11 |
-| 18 | Documentación y cierre | DER actualizado, script.sql final, README final, usuario administrador para los docentes y datos de prueba | [Integrante 2] | 17/11 |
-| 19 | Preparar la presentación | Guion de la demostración, ensayo y organización de los turnos durante la Expo | Todos | 19/11 |
+| N° | Objetivo | Responsables | Plazo a cumplir |
+|---:|---|---|---|
+| 1 | Preparar el repositorio | Todos | 08/10 |
+| 2 | Diseñar la base de datos | Faustino | 10/10 |
+| 3 | Armar la estructura del backend | Faustino - Julián | 13/10 |
+| 4 | Armar la estructura del frontend | Francisco - Santiago | 13/10 |
+| 5 | Login y registro | Faustino - Santiago | 17/10 |
+| 6 | Control de roles | Julián | 20/10 |
+| 7 | Perfil de usuario | Francisco | 22/10 |
+| 8 | Gestión de chats por HTTP | Todos | 24/10 |
+| 9 | Mensajes por HTTP | Todos | 27/10 |
+| 10 | Servidor de WebSockets | Faustino - Julián | 31/10 |
+| 11 | Cliente de WebSockets | Francisco - Santiago | 03/11 |
+| 12 | Chat en tiempo real | Faustino | 05/11 |
+| 13 | Editar y eliminar mensajes | Francisco - Santiago | 07/11 |
+| 14 | Panel de administración | Julián | 12/11 |
+| 15 | Comunicados | Santiago | 14/11 |
+| 16 | Moderación | Santiago | 15/11 |
+| 17 | Pruebas y correcciones | Francisco | 19/11 |
+| 18 | Documentación y cierre | Todos | 21/11 |
+| 19 | Preparar la presentación | Todos | 22/11 |
 
 Se definieron tres hitos a lo largo del período de desarrollo. El primer hito, con fecha de finalización el 28/10, consiste en tener una base funcional: un usuario puede registrarse, iniciar sesión, ver su perfil y crear chats, todo mediante peticiones HTTP con Fetch, con la base de datos ya creada y la autenticación por roles funcionando. El segundo hito, el 10/11, consiste en tener el chat en tiempo real: los WebSockets funcionando, mensajes que llegan de forma instantánea en chats privados y grupales, y la posibilidad de editar y eliminar mensajes. El tercer hito, el 17/11, es el producto completo: el panel de administración y los comunicados terminados, todas las funciones probadas y la documentación finalizada, de modo que el último día quede disponible para ensayar la presentación.
 
