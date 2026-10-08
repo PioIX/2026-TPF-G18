@@ -17,6 +17,8 @@ El objetivo general es desarrollar una aplicación web completa, con frontend, b
 
 Las principales funcionalidades son el registro y el inicio de sesión, la existencia de tres tipos de usuario (alumno, docente y administrador), la edición del perfil con foto, los chats privados y grupales, el envío de mensajes en tiempo real, la edición y eliminación de mensajes propios, los comunicados oficiales dirigidos a un curso o a toda la institución y un panel de administración para gestionar usuarios, cursos y chats.
 
+---
+
 ### Alcance
 
 En cuanto a la autenticación y los usuarios, se desarrollará el registro con nombre de usuario, email y contraseña. El inicio de sesión se resolverá con un token, y las rutas del sistema estarán protegidas según el rol del usuario, que puede ser alumno, docente o administrador. Cada usuario podrá editar su perfil y subir una foto, de la cual se guardará la ruta en la base de datos.
@@ -37,11 +39,15 @@ Como características esperadas del producto final, se busca una aplicación con
 
 Quedan fuera del alcance de esta versión las videollamadas, el envío de archivos pesados, las notificaciones push al celular y las funciones de gestión académica como notas o asistencia. Estas ideas podrían incorporarse en una versión futura.
 
+---
+
 ### Tecnologías y arquitectura
 
 El frontend se desarrollará con React y Next.js, y el backend con Node.js y Express. Las comunicaciones en tiempo real se implementarán con Socket.IO, la base de datos será MySQL y la autenticación se resolverá con JWT y bcrypt. El código se versionará con Git y GitHub dentro de la organización PioIX.
 
 La arquitectura sigue el esquema general pedido en la consigna. El frontend en Next.js se comunica con el backend en Node.js mediante peticiones HTTP y WebSockets, y el backend es el único que se conecta con la base de datos, a la que realiza consultas y de la que recibe las respuestas.
+
+---
 
 ### Diseño inicial
 
@@ -61,6 +67,8 @@ La pantalla de comunicados presenta una lista de avisos ordenados por fecha, don
 
 La pantalla del panel de administración tiene un menú lateral con las secciones de usuarios, cursos, chats y comunicados. En la sección de usuarios se ve una tabla con el nombre de usuario, el email, el rol y el estado de cada persona, con botones para editar y eliminar, un buscador y un filtro por rol, además del botón para crear un usuario nuevo. Las demás secciones siguen la misma estructura.
 
+---
+
 ### Modelo de datos
 
 El Diagrama Entidad-Relación completo se encuentra en la carpeta docs del repositorio (docs/DER.png y el archivo editable docs/DER.drawio), junto con el script de creación de tablas en docs/script.sql. Este diagrama se actualizará al final del proyecto para que refleje la implementación definitiva.
@@ -70,6 +78,8 @@ La base de datos tiene siete entidades. La entidad usuarios representa a las per
 Las relaciones entre estas entidades son las siguientes. Entre usuarios y chats existe una relación de muchos a muchos, resuelta mediante la tabla chats_por_usuarios, ya que un usuario participa en muchos chats y un chat tiene muchos usuarios. Entre chats y mensajes hay una relación de uno a muchos, porque un chat contiene muchos mensajes, y lo mismo ocurre entre usuarios y mensajes, porque un usuario envía muchos mensajes. Entre usuarios y cursos existe otra relación de muchos a muchos, resuelta con la tabla usuarios_cursos. Entre cursos y chats hay una relación de uno a muchos opcional, ya que un curso puede tener un chat grupal asociado. Finalmente, un usuario publica muchos comunicados y un comunicado puede estar dirigido a un curso; si no tiene curso asignado, se entiende que es para toda la institución.
 
 Se tomaron algunas decisiones de diseño. Para distinguir los chats privados de los grupales se usa un campo booleano llamado es_grupal, en lugar de un campo de tipo. La tabla chats_por_usuarios tiene una clave primaria propia en lugar de una clave compuesta, lo que simplifica las consultas desde el backend. Las fotos se guardan como una ruta en un campo VARCHAR(255) y el archivo se almacena en el servidor. Las contraseñas nunca se guardan en texto plano, sino con hash.
+
+---
 
 ### Planificación
 
@@ -103,17 +113,25 @@ Otras fechas importantes son el 07/10, día de la devolución de las propuestas,
 
 La distribución de tareas busca que cada integrante participe en frontend, backend y base de datos. El [Integrante 1] se ocupa principalmente de la autenticación, los roles y la moderación; el [Integrante 2] de la base de datos, la gestión de chats y el panel de administración; el [Integrante 3] de los WebSockets y el chat en tiempo real; y el [Integrante 4] del frontend, la interfaz y la identidad visual. Esta división sirve para organizar el trabajo, pero no implica que el conocimiento esté separado: todos los integrantes conocen el funcionamiento general del proyecto y pueden explicar cualquiera de sus partes.
 
+---
+
 ### Organización del trabajo en GitHub
 
 La rama main solo se actualiza mediante Pull Requests, que deben ser revisados por otro integrante del grupo. Cada funcionalidad se desarrolla en su propia rama, con nombres como feature/login o feature/chat-socket. Cada tarea de la tabla se crea como un Issue asignado a su responsable y se cierra cuando se aprueba el Pull Request correspondiente. Los conflictos y errores también se registran y se resuelven mediante Issues. Todos los integrantes hacen commits y participan en la revisión del código, y los mensajes de commit deben describir con claridad el cambio realizado.
+
+---
 
 ### Estructura del repositorio
 
 El repositorio sigue la estructura mínima pedida en la consigna. La carpeta frontend contiene la aplicación en React y Next.js, con su propio .gitignore, la carpeta public, y dentro de src las carpetas app, components y hooks, donde se ubica el archivo useSocket.js. La carpeta backend contiene el servidor en Node.js, con su .gitignore, el archivo index.js, el package.json y la carpeta modulos, que incluye mysql.js para la conexión con la base de datos. La carpeta docs contiene el DER, el script.sql y los wireframes. En la raíz se encuentra este README.md.
 
+---
+
 ### Riesgos
 
 El principal riesgo es el retraso con los WebSockets, un tema nuevo para el grupo. Para reducirlo, se empezará con una prueba mínima de envío y recepción de mensajes antes de integrarlo al chat completo, y se consultará a los docentes durante las horas de clase. Para evitar conflictos de código en Git se trabajará con ramas por funcionalidad y Pull Requests pequeños y frecuentes. Los cambios en el modelo de datos se registrarán de inmediato en el script.sql y en el DER. Si algún integrante se ausenta, las tareas podrán redistribuirse porque todos conocen el proyecto. Por último, para no subir datos sensibles al repositorio, el .gitignore se configurará desde el inicio y las credenciales se guardarán solo en archivos .env locales.
+
+---
 
 ### Ejecución del proyecto
 
