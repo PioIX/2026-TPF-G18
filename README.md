@@ -9,6 +9,7 @@ Integrantes: Santiago Kim, Francisco Lettieri, Julian Lopez del Prado y Faustino
 
 El nombre de la aplicación es EducaLink. Se trata de una aplicación web de mensajería pensada para la comunidad escolar, que permite a alumnos, docentes y administradores comunicarse mediante chats privados y grupales. Los mensajes se envían y se reciben en tiempo real, cada usuario tiene su perfil con foto y existe un panel de administración desde el cual se gestionan los usuarios, los cursos y las conversaciones.
 
+
 La necesidad que aborda el proyecto es la dispersión de la comunicación dentro de la escuela. Hoy alumnos y docentes se comunican a través de aplicaciones de uso general, como WhatsApp o el correo electrónico, donde la comunicación escolar se mezcla con la vida personal, la institución no tiene ningún control sobre los grupos y resulta difícil mantener la información ordenada por curso. Esto provoca mensajes que se pierden, grupos sin moderación y la ausencia de un canal oficial. EducaLink propone un espacio propio de la institución, ordenado y supervisado.
 
 El público objetivo está formado por tres tipos de usuarios. Los alumnos de 5to informática, que usarán la aplicación para hablar con sus compañeros y con sus docentes. Los docentes, que necesitan comunicarse con sus cursos o con alumnos en particular. Y los administradores, que pueden ser preceptores, directivos o personal designado, y se encargan de gestionar usuarios y cursos y de moderar las conversaciones.
@@ -31,6 +32,7 @@ En cuanto a los comunicados, los docentes y administradores podrán publicarlos,
 
 
 
+
 En cuanto a la administración, el administrador podrá crear, consultar, modificar y dar de baja usuarios, hacer lo mismo con los cursos, asignar usuarios a cursos y moderar el sistema, desactivando usuarios o chats cuando sea necesario. La baja de usuarios y de chats será lógica, es decir que se marcarán como inactivos y no se borrarán, para conservar el historial.
 
 Con esto se cubren las operaciones de creación, consulta, modificación y eliminación de datos sobre usuarios, chats, participantes de chat, mensajes, cursos y comunicados.
@@ -48,6 +50,7 @@ El frontend se desarrollará con React y Next.js, y el backend con Node.js y Exp
 La arquitectura sigue el esquema general pedido en la consigna. El frontend en Next.js se comunica con el backend en Node.js mediante peticiones HTTP y WebSockets, y el backend es el único que se conecta con la base de datos, a la que realiza consultas y de la que recibe las respuestas.
 
 ---
+
 
 ### Diseño inicial
 
@@ -76,6 +79,7 @@ El Diagrama Entidad-Relación completo se encuentra en la carpeta docs del repos
 La base de datos tiene siete entidades. La entidad usuarios representa a las personas que usan el sistema y tiene como atributos principales el identificador, el nombre de usuario, el email, la contraseña, el rol (alumno, docente o administrador), la ruta de la foto, un indicador de si está activo y la fecha de registro. La entidad chats representa las conversaciones y guarda su identificador, nombre, foto, un indicador de si es grupal, la fecha de creación, un indicador de si está activo y, de forma opcional, el curso al que pertenece. La entidad chats_por_usuarios registra la participación de cada usuario en cada chat, con su propio identificador, el chat, el usuario, la fecha en que se unió y un indicador de si es administrador del grupo. La entidad mensajes guarda el identificador, el chat y el usuario que lo envió, el contenido, la fecha de envío y un indicador de si fue editado. La entidad cursos guarda el identificador, el nombre, la orientación, el año y la división. La entidad usuarios_cursos indica a qué curso pertenece cada usuario en cada ciclo lectivo. Por último, la entidad comunicados guarda el identificador, el usuario que lo publica, el curso al que va dirigido (opcional), el título, el contenido y la fecha.
 
 Las relaciones entre estas entidades son las siguientes. Entre usuarios y chats existe una relación de muchos a muchos, resuelta mediante la tabla chats_por_usuarios, ya que un usuario participa en muchos chats y un chat tiene muchos usuarios. Entre chats y mensajes hay una relación de uno a muchos, porque un chat contiene muchos mensajes, y lo mismo ocurre entre usuarios y mensajes, porque un usuario envía muchos mensajes. Entre usuarios y cursos existe otra relación de muchos a muchos, resuelta con la tabla usuarios_cursos. Entre cursos y chats hay una relación de uno a muchos opcional, ya que un curso puede tener un chat grupal asociado. Finalmente, un usuario publica muchos comunicados y un comunicado puede estar dirigido a un curso; si no tiene curso asignado, se entiende que es para toda la institución.
+
 
 Se tomaron algunas decisiones de diseño. Para distinguir los chats privados de los grupales se usa un campo booleano llamado es_grupal, en lugar de un campo de tipo. La tabla chats_por_usuarios tiene una clave primaria propia en lugar de una clave compuesta, lo que simplifica las consultas desde el backend. Las fotos se guardan como una ruta en un campo VARCHAR(255) y el archivo se almacena en el servidor. Las contraseñas nunca se guardan en texto plano, sino con hash.
 
@@ -174,5 +178,6 @@ El principal riesgo es el retraso con los WebSockets, un tema nuevo para el grup
 ---
 
 ### Ejecución del proyecto
+
 
 Esta sección se completará en la entrega final, con los pasos para instalar las dependencias y ejecutar el backend y el frontend, y con los datos del usuario administrador para los docentes.
