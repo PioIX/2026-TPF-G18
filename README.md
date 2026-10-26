@@ -9,7 +9,6 @@ Integrantes: Santiago Kim, Francisco Lettieri, Julian Lopez del Prado y Faustino
 
 El nombre de la aplicación es EducaLink. Se trata de una aplicación web de mensajería pensada para la comunidad escolar, que permite a alumnos, docentes y administradores comunicarse mediante chats privados y grupales. Los mensajes se envían y se reciben en tiempo real, cada usuario tiene su perfil con foto y existe un panel de administración desde el cual se gestionan los usuarios, los cursos y las conversaciones.
 
-
 La necesidad que aborda el proyecto es la dispersión de la comunicación dentro de la escuela. Hoy alumnos y docentes se comunican a través de aplicaciones de uso general, como WhatsApp o el correo electrónico, donde la comunicación escolar se mezcla con la vida personal, la institución no tiene ningún control sobre los grupos y resulta difícil mantener la información ordenada por curso. Esto provoca mensajes que se pierden, grupos sin moderación y la ausencia de un canal oficial. EducaLink propone un espacio propio de la institución, ordenado y supervisado.
 
 El público objetivo está formado por tres tipos de usuarios. Los alumnos de 5to informática, que usarán la aplicación para hablar con sus compañeros y con sus docentes. Los docentes, que necesitan comunicarse con sus cursos o con alumnos en particular. Y los administradores, que pueden ser preceptores, directivos o personal designado, y se encargan de gestionar usuarios y cursos y de moderar las conversaciones.
@@ -30,16 +29,13 @@ En cuanto a los mensajes, el historial de cada chat se cargará mediante peticio
 
 En cuanto a los comunicados, los docentes y administradores podrán publicarlos, ya sea para un curso en particular o para toda la institución, y los destinatarios recibirán un aviso en tiempo real.
 
+En cuanto a la administración, el administrador podrá crear, consultar, modificar y dar de baja usuarios, hacer lo mismo con los cursos, matricular alumnos en los cursos y asignar docentes a las materias de cada curso, y moderar el sistema, desactivando usuarios o chats cuando sea necesario. La baja de usuarios y de chats será lógica, es decir que se marcarán como inactivos y no se borrarán, para conservar el historial.
 
-
-
-En cuanto a la administración, el administrador podrá crear, consultar, modificar y dar de baja usuarios, hacer lo mismo con los cursos, asignar usuarios a cursos y moderar el sistema, desactivando usuarios o chats cuando sea necesario. La baja de usuarios y de chats será lógica, es decir que se marcarán como inactivos y no se borrarán, para conservar el historial.
-
-Con esto se cubren las operaciones de creación, consulta, modificación y eliminación de datos sobre usuarios, chats, participantes de chat, mensajes, cursos y comunicados.
+Con esto se cubren las operaciones de creación, consulta, modificación y eliminación de datos sobre usuarios, chats, participantes de chat, mensajes, cursos, matrículas y comunicados.
 
 Como características esperadas del producto final, se busca una aplicación con comunicación entre cliente y servidor por HTTP y por WebSockets, datos guardados de forma persistente en una base de datos MySQL, una identidad visual coherente en todas las pantallas y un usuario administrador de prueba para que los docentes puedan evaluar el sistema.
 
-Quedan fuera del alcance de esta versión las videollamadas, el envío de archivos pesados, las notificaciones push al celular y las funciones de gestión académica como notas o asistencia. Estas ideas podrían incorporarse en una versión futura.
+Quedan fuera del alcance de esta versión las videollamadas, el envío de archivos pesados, las notificaciones push al celular y las funciones de gestión académica como notas o asistencia. Estas ideas podrían incorporarse en una versión futura. Para facilitar esa ampliación, el modelo de datos ya contempla las tablas de tareas, entregas, calificaciones y asistencias, pero en esta versión no tienen funcionalidad asociada en la aplicación.
 
 ---
 
@@ -50,7 +46,6 @@ El frontend se desarrollará con React y Next.js, y el backend con Node.js y Exp
 La arquitectura sigue el esquema general pedido en la consigna. El frontend en Next.js se comunica con el backend en Node.js mediante peticiones HTTP y WebSockets, y el backend es el único que se conecta con la base de datos, a la que realiza consultas y de la que recibe las respuestas.
 
 ---
-
 
 ### Diseño inicial
 
@@ -74,14 +69,72 @@ La pantalla del panel de administración tiene un menú lateral con las seccione
 
 ### Modelo de datos
 
-El Diagrama Entidad-Relación completo se encuentra en la carpeta docs del repositorio (docs/DER.png y el archivo editable docs/DER.drawio), junto con el script de creación de tablas en docs/script.sql. Este diagrama se actualizará al final del proyecto para que refleje la implementación definitiva.
+El Diagrama Entidad-Relación completo se encuentra en la carpeta docs del repositorio (docs/DER.png y el archivo editable docs/DER.drawio), junto con el script de creación de tablas y carga de datos en docs/script.sql. Este diagrama se actualizará al final del proyecto para que refleje la implementación definitiva.
 
-La base de datos tiene siete entidades. La entidad usuarios representa a las personas que usan el sistema y tiene como atributos principales el identificador, el nombre de usuario, el email, la contraseña, el rol (alumno, docente o administrador), la ruta de la foto, un indicador de si está activo y la fecha de registro. La entidad chats representa las conversaciones y guarda su identificador, nombre, foto, un indicador de si es grupal, la fecha de creación, un indicador de si está activo y, de forma opcional, el curso al que pertenece. La entidad chats_por_usuarios registra la participación de cada usuario en cada chat, con su propio identificador, el chat, el usuario, la fecha en que se unió y un indicador de si es administrador del grupo. La entidad mensajes guarda el identificador, el chat y el usuario que lo envió, el contenido, la fecha de envío y un indicador de si fue editado. La entidad cursos guarda el identificador, el nombre, la orientación, el año y la división. La entidad usuarios_cursos indica a qué curso pertenece cada usuario en cada ciclo lectivo. Por último, la entidad comunicados guarda el identificador, el usuario que lo publica, el curso al que va dirigido (opcional), el título, el contenido y la fecha.
+#### Enfoque modular
 
-Las relaciones entre estas entidades son las siguientes. Entre usuarios y chats existe una relación de muchos a muchos, resuelta mediante la tabla chats_por_usuarios, ya que un usuario participa en muchos chats y un chat tiene muchos usuarios. Entre chats y mensajes hay una relación de uno a muchos, porque un chat contiene muchos mensajes, y lo mismo ocurre entre usuarios y mensajes, porque un usuario envía muchos mensajes. Entre usuarios y cursos existe otra relación de muchos a muchos, resuelta con la tabla usuarios_cursos. Entre cursos y chats hay una relación de uno a muchos opcional, ya que un curso puede tener un chat grupal asociado. Finalmente, un usuario publica muchos comunicados y un comunicado puede estar dirigido a un curso; si no tiene curso asignado, se entiende que es para toda la institución.
+El modelo se diseñó pensando en que la plataforma pueda crecer. En lugar de asumir un único colegio, una única orientación y un único curso, la estructura institucional se separa en entidades propias (colegio, orientación, curso y ciclo lectivo). De este modo, incorporar más colegios, más carreras o más cursos consiste únicamente en agregar filas, sin modificar la estructura de las tablas ni el código que ya funciona. Los datos de prueba cargados corresponden a un colegio (Pío IX), una orientación (Informática) y dos cursos (5to A y 5to B del ciclo lectivo 2026).
 
+#### Entidades
 
-Se tomaron algunas decisiones de diseño. Para distinguir los chats privados de los grupales se usa un campo booleano llamado es_grupal, en lugar de un campo de tipo. La tabla chats_por_usuarios tiene una clave primaria propia en lugar de una clave compuesta, lo que simplifica las consultas desde el backend. Las fotos se guardan como una ruta en un campo VARCHAR(255) y el archivo se almacena en el servidor. Las contraseñas nunca se guardan en texto plano, sino con hash.
+La base de datos tiene 18 tablas, organizadas en cuatro grupos.
+
+**Usuarios y personas.**
+- `Usuarios_1` representa las cuentas que usan el sistema. Guarda el identificador, el nombre de usuario (único), el email (único), la contraseña, el rol (alumno, docente o administrador), la ruta de la foto, un indicador de si está activo y la fecha de registro.
+- `Alumnos` y `Docentes` guardan los datos personales de cada tipo de persona (nombre, apellido, DNI y, en el caso de los alumnos, la fecha de nacimiento). Cada alumno y cada docente está vinculado a una única cuenta de `Usuarios_1`. Esta separación permite que `Usuarios_1` se ocupe solo de la identidad y el acceso, y que los datos propios de cada rol vivan en su tabla.
+
+**Estructura institucional.**
+- `Colegios` guarda cada institución, con su nombre, dirección, localidad y un indicador de si está activa.
+- `Orientaciones` representa la carrera o especialidad dentro de un colegio (por ejemplo, Informática).
+- `Cursos` representa un curso concreto: la orientación, el año, la división y el ciclo lectivo (por ejemplo, 5to B de Informática, 2026).
+- `Materias` es el catálogo de materias, sin vincularlas a un curso ni a un docente.
+- `Materias_Dictadas` indica qué materia se dicta en qué curso y cuántas horas semanales tiene.
+- `Dictados_Docentes` indica qué docentes dan cada materia dictada y con qué rol (titular, suplente o ayudante), de modo que una materia puede tener varios docentes.
+- `Matriculas` indica en qué curso está cada alumno, con un estado (activa, baja o finalizada). Como cada curso pertenece a un ciclo lectivo, un alumno acumula una matrícula por año.
+
+**Mensajería.**
+- `Chats` representa las conversaciones y guarda su identificador, nombre, foto, un indicador de si es grupal, la fecha de creación y un indicador de si está activo.
+- `Chats_por_Usuarios` registra la participación de cada usuario en cada chat, con su propio identificador, el chat, el usuario, la fecha en que se unió y un indicador de si es administrador del grupo.
+- `Mensajes` guarda el identificador, el chat y el usuario que lo envió, el contenido, la fecha de envío y un indicador de si fue editado.
+- `Notificaciones` guarda los avisos dirigidos a cada usuario, con título, mensaje, tipo (tarea, calificación, asistencia, chat o aviso), un indicador de si fue leída y la fecha de creación. Es la base de los avisos en tiempo real.
+
+**Gestión académica (prevista para una versión futura).**
+- `Tareas`, `Entregas`, `Calificaciones` y `Asistencias`. Están creadas y relacionadas con el resto del modelo, pero en esta versión la aplicación no las utiliza. Se vinculan a la materia dictada, es decir, a una materia en un curso concreto.
+
+**Comunicados.** Los comunicados oficiales (título, contenido, usuario que lo publica y curso destinatario opcional) se registrarán en una tabla propia, que se incorporará al esquema durante la tarea de comunicados. Cuando un comunicado se publique, se generarán notificaciones para los destinatarios.
+
+#### Vista de inscripciones
+
+La base incluye la vista `Vista_Inscripciones`, que no guarda datos propios: se calcula a partir de las matrículas activas y de las materias que se dictan en cada curso, y devuelve qué materias cursa cada alumno. Así, al matricular a un alumno en un curso queda automáticamente inscripto en todas las materias de ese curso, sin cargar inscripciones una por una.
+
+#### Relaciones
+
+Las relaciones entre estas entidades son las siguientes.
+
+- Entre usuarios y chats existe una relación de muchos a muchos, resuelta mediante la tabla `Chats_por_Usuarios`, ya que un usuario participa en muchos chats y un chat tiene muchos usuarios.
+- Entre chats y mensajes hay una relación de uno a muchos, porque un chat contiene muchos mensajes, y lo mismo ocurre entre usuarios y mensajes, porque un usuario envía muchos mensajes. Un usuario también recibe muchas notificaciones.
+- Cada alumno y cada docente corresponde a una única cuenta de usuario (relación uno a uno).
+- Un colegio tiene muchas orientaciones, y una orientación tiene muchos cursos.
+- Entre alumnos y cursos existe una relación de muchos a muchos, resuelta con la tabla `Matriculas`: un alumno tiene una matrícula por cada ciclo lectivo y un curso reúne a muchos alumnos.
+- Entre cursos y materias existe una relación de muchos a muchos, resuelta con `Materias_Dictadas`: un curso tiene muchas materias y una materia se dicta en muchos cursos.
+- Entre las materias dictadas y los docentes existe una relación de muchos a muchos, resuelta con `Dictados_Docentes`, que además registra el rol del docente en esa materia.
+- Las tareas, calificaciones y asistencias pertenecen a una materia dictada, y las entregas pertenecen a una tarea y a un alumno.
+
+#### Decisiones de diseño
+
+Se tomaron algunas decisiones de diseño.
+
+- Para distinguir los chats privados de los grupales se usa un campo booleano llamado `es_grupal`, en lugar de un campo de tipo.
+- La tabla `Chats_por_Usuarios` tiene una clave primaria propia en lugar de una clave compuesta, lo que simplifica las consultas desde el backend.
+- Las fotos se guardan como una ruta en un campo VARCHAR(255) y el archivo se almacena en el servidor.
+- Las contraseñas nunca se guardan en texto plano, sino con hash (bcrypt).
+- Las bajas de usuarios y de chats son lógicas, mediante un indicador de actividad, para conservar el historial.
+- La estructura institucional es modular: cursos, materias y docentes se relacionan mediante tablas intermedias y los cursos pertenecen a un ciclo lectivo, de modo que la información de un año no se pisa con la del siguiente.
+- El DNI es opcional y único, para poder completarlo después sin riesgo de duplicados.
+
+#### Creación de la base de datos
+
+El archivo docs/script.sql crea las 18 tablas con sus claves foráneas y restricciones, y carga los datos de prueba: 79 alumnos de 5to A y 5to B, 22 docentes, 15 materias, 2 cursos, 1 colegio y 1 orientación. Para usarlo hay que tener MySQL 8, crear una base de datos vacía, seleccionarla y ejecutar el script completo. Como no incluye instrucciones para borrar tablas, no debe ejecutarse sobre una base que ya tenga tablas con los mismos nombres.
 
 ---
 
@@ -115,7 +168,7 @@ El proyecto se desarrolla entre el 28/09 y el 20/11, fecha de la Expo Pío. A co
 
 1. **Preparar el repositorio:** crear el repositorio del proyecto, organizar las carpetas de frontend, backend y documentación, configurar el .gitignore, realizar el README inicial y establecer las ramas e Issues para organizar el trabajo.
 
-2. **Diseñar la base de datos:** finalizar el DER, definir las tablas, relaciones, claves primarias y foráneas, crear el script.sql y preparar algunos datos de prueba para poder comenzar con el desarrollo.
+2. **Diseñar la base de datos:** finalizar el DER, definir las tablas, relaciones, claves primarias y foráneas, crear el script.sql y preparar algunos datos de prueba para poder comenzar con el desarrollo. El diseño se hizo de forma modular (colegios, orientaciones, cursos, materias y matrículas) para que el sistema pueda ampliarse a más colegios y cursos, y se cargaron los datos reales de 5to A y 5to B de Informática.
 
 3. **Armar la estructura del backend:** configurar el proyecto de Node.js, instalar las dependencias necesarias, crear el index.js, configurar la conexión a MySQL mediante mysql.js y dejar preparada la estructura para las rutas y endpoints.
 
@@ -139,7 +192,7 @@ El proyecto se desarrolla entre el 28/09 y el 20/11, fecha de la Expo Pío. A co
 
 13. **Editar y eliminar mensajes:** desarrollar los endpoints y eventos necesarios para editar y eliminar mensajes, incluyendo la marca de mensaje editado y la sincronización de estos cambios en tiempo real.
 
-14. **Panel de administración:** crear un panel desde el cual los administradores puedan gestionar usuarios y cursos, además de realizar las asignaciones correspondientes.
+14. **Panel de administración:** crear un panel desde el cual los administradores puedan gestionar usuarios y cursos, además de realizar las asignaciones correspondientes (matricular alumnos en cursos y asignar docentes a las materias de cada curso).
 
 15. **Comunicados:** permitir que los administradores o usuarios autorizados creen, consulten y eliminen comunicados, incorporando avisos en tiempo real para informar a los usuarios.
 
@@ -173,11 +226,10 @@ El repositorio sigue la estructura mínima pedida en la consigna. La carpeta fro
 
 ### Riesgos
 
-El principal riesgo es el retraso con los WebSockets, un tema nuevo para el grupo. Para reducirlo, se empezará con una prueba mínima de envío y recepción de mensajes antes de integrarlo al chat completo, y se consultará a los docentes durante las horas de clase. Para evitar conflictos de código en Git se trabajará con ramas por funcionalidad y Pull Requests pequeños y frecuentes. Los cambios en el modelo de datos se registrarán de inmediato en el script.sql y en el DER. Si algún integrante se ausenta, las tareas podrán redistribuirse porque todos conocen el proyecto. Por último, para no subir datos sensibles al repositorio, el .gitignore se configurará desde el inicio y las credenciales se guardarán solo en archivos .env locales.
+El principal riesgo es el retraso con los WebSockets, un tema nuevo para el grupo. Para reducirlo, se empezará con una prueba mínima de envío y recepción de mensajes antes de integrarlo al chat completo, y se consultará a los docentes durante las horas de clase. Para evitar conflictos de código en Git se trabajará con ramas por funcionalidad y Pull Requests pequeños y frecuentes. Los cambios en el modelo de datos se registrarán de inmediato en el script.sql y en el DER. Si algún integrante se ausenta, las tareas podrán redistribuirse porque todos conocen el proyecto. Por último, para no subir datos sensibles al repositorio, el .gitignore se configurará desde el inicio y las credenciales se guardarán solo en archivos .env locales. Esto incluye las contraseñas iniciales de los usuarios de prueba, que deben guardarse con hash antes de publicar el script en el repositorio.
 
 ---
 
 ### Ejecución del proyecto
-
 
 Esta sección se completará en la entrega final, con los pasos para instalar las dependencias y ejecutar el backend y el frontend, y con los datos del usuario administrador para los docentes.
