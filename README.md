@@ -21,7 +21,7 @@ Las principales funcionalidades son el registro y el inicio de sesión, la exist
 
 ### Alcance
 
-En cuanto a la autenticación y los usuarios, se desarrollará el registro con nombre de usuario, email y contraseña. El inicio de sesión se resolverá con un token, y las rutas del sistema estarán protegidas según el rol del usuario, que puede ser alumno, docente o administrador. Cada usuario podrá editar su perfil y subir una foto, de la cual se guardará la ruta en la base de datos.
+En cuanto a la autenticación y los usuarios, el administrador creará las cuentas. El inicio de sesión consultará el correo y la contraseña en MySQL y conservará los datos del usuario en sessionStorage hasta que se cierre la pestaña.
 
 En cuanto a los chats, los usuarios podrán crear conversaciones privadas con otra persona y chats grupales con nombre y foto. En los grupos se podrán agregar y quitar participantes, y quien tenga el rol de administrador del grupo podrá gestionarlo. Cada usuario verá el listado de sus chats junto con el último mensaje de cada uno.
 
@@ -41,7 +41,7 @@ Quedan fuera del alcance de esta versión las videollamadas, el envío de archiv
 
 ### Tecnologías y arquitectura
 
-El frontend se desarrollará con React y Next.js, y el backend con Node.js y Express. Las comunicaciones en tiempo real se implementarán con Socket.IO, la base de datos será MySQL y la autenticación se resolverá con JWT y bcrypt. El código se versionará con Git y GitHub dentro de la organización PioIX.
+El frontend se desarrolla con React y Next.js, el backend con Node.js y Express, las comunicaciones en tiempo real con Socket.IO y la base de datos con MySQL. El código se versionará con Git y GitHub dentro de la organización PioIX.
 
 La arquitectura sigue el esquema general pedido en la consigna. El frontend en Next.js se comunica con el backend en Node.js mediante peticiones HTTP y WebSockets, y el backend es el único que se conecta con la base de datos, a la que realiza consultas y de la que recibe las respuestas.
 
@@ -127,7 +127,7 @@ Se tomaron algunas decisiones de diseño.
 - Para distinguir los chats privados de los grupales se usa un campo booleano llamado `es_grupal`, en lugar de un campo de tipo.
 - La tabla `Chats_por_Usuarios` tiene una clave primaria propia en lugar de una clave compuesta, lo que simplifica las consultas desde el backend.
 - Las fotos se guardan como una ruta en un campo VARCHAR(255) y el archivo se almacena en el servidor.
-- Las contraseñas nunca se guardan en texto plano, sino con hash (bcrypt).
+- El login compara el correo y la contraseña directamente con los valores almacenados en la base de datos, según la decisión del proyecto.
 - Las bajas de usuarios y de chats son lógicas, mediante un indicador de actividad, para conservar el historial.
 - La estructura institucional es modular: cursos, materias y docentes se relacionan mediante tablas intermedias y los cursos pertenecen a un ciclo lectivo, de modo que la información de un año no se pisa con la del siguiente.
 - El DNI es opcional y único, para poder completarlo después sin riesgo de duplicados.
@@ -174,7 +174,7 @@ El proyecto se desarrolla entre el 28/09 y el 20/11, fecha de la Expo Pío. A co
 
 4. **Armar la estructura del frontend:** crear el proyecto en Next.js, configurar el layout general, definir la identidad visual y preparar los componentes reutilizables que se utilizarán durante el desarrollo.
 
-5. **Login y registro:** desarrollar el registro de usuarios y el inicio de sesión, almacenar las contraseñas de forma segura mediante hash, implementar JWT y crear las pantallas correspondientes en el frontend.
+5. **Login y usuarios:** el administrador crea las cuentas; el inicio de sesión compara correo y contraseña con la base de datos y guarda el usuario en sessionStorage.
 
 6. **Control de roles:** implementar la autenticación y autorización para diferenciar alumnos, docentes y administradores, protegiendo las rutas y funcionalidades según el rol de cada usuario.
 
@@ -226,7 +226,7 @@ El repositorio sigue la estructura mínima pedida en la consigna. La carpeta fro
 
 ### Riesgos
 
-El principal riesgo es el retraso con los WebSockets, un tema nuevo para el grupo. Para reducirlo, se empezará con una prueba mínima de envío y recepción de mensajes antes de integrarlo al chat completo, y se consultará a los docentes durante las horas de clase. Para evitar conflictos de código en Git se trabajará con ramas por funcionalidad y Pull Requests pequeños y frecuentes. Los cambios en el modelo de datos se registrarán de inmediato en el script.sql y en el DER. Si algún integrante se ausenta, las tareas podrán redistribuirse porque todos conocen el proyecto. Por último, para no subir datos sensibles al repositorio, el .gitignore se configurará desde el inicio y las credenciales se guardarán solo en archivos .env locales. Esto incluye las contraseñas iniciales de los usuarios de prueba, que deben guardarse con hash antes de publicar el script en el repositorio.
+El principal riesgo es el retraso con los WebSockets, un tema nuevo para el grupo. Para reducirlo, se empezará con una prueba mínima de envío y recepción de mensajes antes de integrarlo al chat completo, y se consultará a los docentes durante las horas de clase. Para evitar conflictos de código en Git se trabajará con ramas por funcionalidad y Pull Requests pequeños y frecuentes. Los cambios en el modelo de datos se registrarán de inmediato en el script.sql y en el DER. Si algún integrante se ausenta, las tareas podrán redistribuirse porque todos conocen el proyecto. Por último, para no subir datos sensibles al repositorio, el .gitignore se configurará desde el inicio y las credenciales se guardarán solo en archivos .env locales. Las credenciales de conexión y las cuentas de prueba no deben incluirse en el repositorio.
 
 ---
 

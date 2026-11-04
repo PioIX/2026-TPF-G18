@@ -1,0 +1,19 @@
+{
+  "name": "educalink-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API de EducaLink",
+  "main": "index.js",
+  "scripts": {
+    "start": "node --env-file=.home.env index.js",
+    "dev": "node --watch --env-file=.home.env index.js",
+    "pio": "node --watch --env-file=.pio.env index.js",
+    "home": "node --watch --env-file=.home.env index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "mysql2": "^3.11.5"
+  }
+}
+
