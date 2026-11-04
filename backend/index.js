@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const usuariosRoutes = require("./routes/usuarios.routes");
 const authRoutes = require("./routes/auth.routes");
 const pool = require("./config/database");
 
@@ -10,6 +11,8 @@ const allowedOrigins = (process.env.FRONTEND_ORIGINS || "http://localhost:3000,h
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+
+app.use("/api/usuarios", usuariosRoutes);
 
 app.get("/api/health", async (_req, res) => {
   try {
