@@ -1,0 +1,82 @@
+.layout {
+    --ink: #17315b;
+    --muted: #8494ad;
+    --line: #e8eef7;
+    display: grid;
+    grid-template-columns: 350px minmax(0, 1fr);
+    height: 100dvh;
+    background: #f5f8fd;
+    color: var(--ink);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif
+}
+
+.listPanel {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-right: 1px solid var(--line);
+    min-width: 0
+}
+
+.listHeader {
+    padding: 22px 20px 14px;
+    border-bottom: 1px solid var(--line)
+}
+
+.brand {
+    display: inline-block;
+    color: #1765c9;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -.6px;
+    text-decoration: none;
+    margin-bottom: 22px
+}
+
+.brand span {
+    color: #7195c5
+}
+
+.profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 0 20px
+}
+
+.profile img,
+.chatRow img,
+.conversationHeader img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #edf4ff
+}
+
+.profile div {
+    display: grid;
+    gap: 4px
+}
+
+.profile strong {
+    font-size: 12px
+}
+
+.profile small {
+    font-size: 10px;
+    color: var(--muted)
+}
+
+.listTitle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 1px 0 12px
+}
+
+.listTitle h1 {
+    font-size: 21px;
+    margin: 0;
+    letter-spacing: -.5px
+}
