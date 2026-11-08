@@ -35,7 +35,7 @@ Con esto se cubren las operaciones de creación, consulta, modificación y elimi
 
 Como características esperadas del producto final, se busca una aplicación con comunicación entre cliente y servidor por HTTP y por WebSockets, datos guardados de forma persistente en una base de datos MySQL, una identidad visual coherente en todas las pantallas y un usuario administrador de prueba para que los docentes puedan evaluar el sistema.
 
-Quedan fuera del alcance de esta versión las videollamadas, el envío de archivos pesados, las notificaciones push al celular y las funciones de gestión académica como notas o asistencia. Estas ideas podrían incorporarse en una versión futura. Para facilitar esa ampliación, el modelo de datos ya contempla las tablas de tareas, entregas, calificaciones y asistencias, pero en esta versión no tienen funcionalidad asociada en la aplicación.
+En esta versión se incorporan vistas académicas conectadas a MySQL: los alumnos consultan sus materias, asistencias, calificaciones y tareas, y registran entregas mediante un enlace o comentario; los docentes consultan sus materias, cargan asistencias y calificaciones, y publican tareas. La carga binaria de archivos, las videollamadas y las notificaciones push al celular quedan fuera de esta versión.
 
 ---
 

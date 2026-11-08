@@ -5,6 +5,10 @@ const { Server } = require("socket.io");
 const usuariosRoutes = require("./routes/usuarios.routes");
 const authRoutes = require("./routes/auth.routes");
 const chatRoutes = require("./routes/chats.routes");
+const materiasRoutes = require("./routes/materias.routes");
+const asistenciaRoutes = require("./routes/asistencia.routes");
+const calificacionesRoutes = require("./routes/calificaciones.routes");
+const tareasRoutes = require("./routes/tareas.routes");
 const pool = require("./config/database");
 const attachChatSocket = require("./sockets/chat.socket");
 
@@ -19,12 +23,16 @@ app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: "1mb" }));
 
 const io = new Server(server, {
-  cors: { origin: allowedOrigins, methods: ["GET", "POST"] },
+  cors: { origin: allowedOrigins, methods: ["GET", "POST", "PATCH"] },
 });
 
 app.use("/api/auth", authRoutes);
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/chats", chatRoutes);
+app.use("/api/materias", materiasRoutes);
+app.use("/api/asistencias", asistenciaRoutes);
+app.use("/api/calificaciones", calificacionesRoutes);
+app.use("/api/tareas", tareasRoutes);
 
 app.get("/api/health", async (_req, res) => {
   try {
