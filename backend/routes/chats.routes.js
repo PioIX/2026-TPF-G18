@@ -37,6 +37,60 @@ router.get("/:chatId/mensajes", async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+router.patch("/:chatId/mensajes/:mensajeId", async (req, res, next) => {
+  const chatId = Number(req.params.chatId);
+  const messageId = Number(req.params.mensajeId);
+  const userId = Number(req.body?.usuarioId);
+  const contenido = typeof req.body?.contenido === "string" ? req.body.contenido.trim() : "";
+  if (![chatId, messageId, userId].every((id) => Number.isInteger(id) && id > 0) || !contenido || contenido.length > 4000) {
+    return res.status(400).json({ error: "El mensaje debe tener entre 1 y 4000 caracteres." });
+  }
+  try {
+    const [owned] = await pool.execute(
+      `SELECT m.id_mensaje FROM Mensajes m
+       JOIN Chats_por_Usuarios cu ON cu.id_chat = m.id_chat AND cu.id_usuario = ?
+       WHERE m.id_mensaje = ? AND m.id_chat = ? AND m.id_usuario = ? LIMIT 1`,
+      [userId, messageId, chatId, userId]
+    );
+    if (!owned.length) return res.status(404).json({ error: "No se encontró un mensaje propio en este chat." });
+
+    await pool.execute(
+      "UPDATE Mensajes SET contenido = ?, editado = 1 WHERE id_mensaje = ? AND id_chat = ? AND id_usuario = ?",
+      [contenido, messageId, chatId, userId]
+    );
+    const [rows] = await pool.execute(
+      `SELECT m.id_mensaje AS id, m.id_chat AS chat_id, m.id_usuario AS usuario_id,
+              m.contenido, m.fecha_envio, m.editado,
+              u.username AS remitente_nombre, u.foto AS remitente_foto
+       FROM Mensajes m JOIN Usuarios_1 u ON u.id_usuario = m.id_usuario
+       WHERE m.id_mensaje = ?`, [messageId]
+    );
+    if (!rows.length) return res.status(404).json({ error: "El mensaje ya no está disponible." });
+    req.app.get("io").to(`chat_${chatId}`).emit("mensaje_editado", rows[0]);
+    res.json(rows[0]);
+  } catch (error) { next(error); }
+});
+
+router.delete("/:chatId/mensajes/:mensajeId", async (req, res, next) => {
+  const chatId = Number(req.params.chatId);
+  const messageId = Number(req.params.mensajeId);
+  const userId = Number(req.query.usuarioId);
+  if (![chatId, messageId, userId].every((id) => Number.isInteger(id) && id > 0)) {
+    return res.status(400).json({ error: "Datos del mensaje inválidos." });
+  }
+  try {
+    const [deleted] = await pool.execute(
+      `DELETE m FROM Mensajes m
+       JOIN Chats_por_Usuarios cu ON cu.id_chat = m.id_chat AND cu.id_usuario = ?
+       WHERE m.id_mensaje = ? AND m.id_chat = ? AND m.id_usuario = ?`,
+      [userId, messageId, chatId, userId]
+    );
+    if (!deleted.affectedRows) return res.status(404).json({ error: "No se encontró un mensaje propio en este chat." });
+    const payload = { id: messageId, chat_id: chatId };
+    req.app.get("io").to(`chat_${chatId}`).emit("mensaje_eliminado", payload);
+    res.json({ ok: true, ...payload });
+  } catch (error) { next(error); }
+});
 router.post("/nuevo", async (req, res, next) => {
   const { usuarioId, emailOtro } = req.body;
   const userId = Number(usuarioId);

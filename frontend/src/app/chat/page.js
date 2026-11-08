@@ -15,6 +15,9 @@ export default function ChatPage() {
   const [active, setActive] = useState(null);
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editingContent, setEditingContent] = useState("");
+  const [savingMessage, setSavingMessage] = useState(false);
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [createType, setCreateType] = useState("direct");
@@ -51,8 +54,27 @@ export default function ChatPage() {
       if (Number(activeRef.current) === Number(message.chat_id)) setMessages((items) => [...items, message]);
       loadChats();
     };
+    const updateMessage = (message) => {
+      if (Number(activeRef.current) === Number(message.chat_id)) {
+        setMessages((items) => items.map((item) => Number(item.id) === Number(message.id) ? message : item));
+      }
+      loadChats();
+    };
+    const removeMessage = ({ id, chat_id: chatId }) => {
+      if (Number(activeRef.current) === Number(chatId)) {
+        setMessages((items) => items.filter((item) => Number(item.id) !== Number(id)));
+        setEditingMessageId((current) => Number(current) === Number(id) ? null : current);
+      }
+      loadChats();
+    };
     socket.on("nuevo_mensaje", receive);
-    return () => socket.off("nuevo_mensaje", receive);
+    socket.on("mensaje_editado", updateMessage);
+    socket.on("mensaje_eliminado", removeMessage);
+    return () => {
+      socket.off("nuevo_mensaje", receive);
+      socket.off("mensaje_editado", updateMessage);
+      socket.off("mensaje_eliminado", removeMessage);
+    };
   }, [socket, loadChats]);
   useEffect(() => { if (endRef.current) endRef.current.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
@@ -104,6 +126,57 @@ export default function ChatPage() {
     setDraft("");
   }
 
+  function beginEdit(message) {
+    setEditingMessageId(message.id);
+    setEditingContent(message.contenido);
+    setError("");
+  }
+
+  async function saveMessage(event, message) {
+    event.preventDefault();
+    const contenido = editingContent.trim();
+    if (!contenido || savingMessage) return;
+    setSavingMessage(true);
+    setError("");
+    try {
+      const response = await fetch(`${API}/chats/${active.id}/mensajes/${message.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuarioId: user.id_usuario, contenido }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || "No se pudo editar el mensaje.");
+        return;
+      }
+      setMessages((items) => items.map((item) => Number(item.id) === Number(data.id) ? data : item));
+      setEditingMessageId(null);
+      setEditingContent("");
+      await loadChats();
+    } catch {
+      setError("No se pudo conectar con el servidor.");
+    } finally {
+      setSavingMessage(false);
+    }
+  }
+
+  async function deleteMessage(message) {
+    if (!window.confirm("¿Eliminar este mensaje para todos en el chat?")) return;
+    setError("");
+    try {
+      const response = await fetch(`${API}/chats/${active.id}/mensajes/${message.id}?usuarioId=${user.id_usuario}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || "No se pudo eliminar el mensaje.");
+        return;
+      }
+      setMessages((items) => items.filter((item) => Number(item.id) !== Number(message.id)));
+      await loadChats();
+    } catch {
+      setError("No se pudo conectar con el servidor.");
+    }
+  }
+
   const filtered = chats.filter((chat) => (chat.nombre || "").toLowerCase().includes(search.toLowerCase()));
   if (!user) return <main className={styles.loading}>Cargando EducaLink…</main>;
 
@@ -114,7 +187,7 @@ export default function ChatPage() {
       <button className={styles.back} onClick={() => router.push("/alumno")}>← Volver al inicio</button>
     </aside>
     <section className={styles.conversation}>
-      {active ? <><header className={styles.conversationHeader}><img src={active.foto || avatar} alt=""/><div><strong>{active.nombre}</strong><small><i className={conectado ? styles.online : ""}/> {conectado ? "Conectado" : "Reconectando…"}</small></div><button onClick={loadChats} aria-label="Actualizar chats">↻</button></header><div className={styles.messageArea}>{messages.map((message) => { const own = Number(message.usuario_id) === Number(user.id_usuario); return <article key={message.id} className={`${styles.message} ${own ? styles.own : ""}`}><strong>{own ? "Vos" : message.remitente_nombre || "Usuario"}</strong><p>{message.contenido}</p><time>{new Date(message.fecha_envio).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</time></article>; })}<div ref={endRef}/>{!messages.length && <p className={styles.emptyConversation}>Todavía no hay mensajes. ¡Mandá el primero!</p>}</div><form className={styles.composer} onSubmit={sendMessage}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Escribí un mensaje…" maxLength={4000}/><button disabled={!conectado || !draft.trim()}>Enviar <span>↑</span></button></form></> : <div className={styles.welcome}><div className={styles.welcomeIcon}>✉</div><h2>Tu comunidad, más cerca</h2><p>Elegí una conversación para ver los mensajes o iniciá un chat con alguien de EducaLink.</p><button onClick={() => setCreating(true)}>＋ Nuevo chat</button></div>}
+      {active ? <><header className={styles.conversationHeader}><img src={active.foto || avatar} alt=""/><div><strong>{active.nombre}</strong><small><i className={conectado ? styles.online : ""}/> {conectado ? "Conectado" : "Reconectando…"}</small></div><button onClick={loadChats} aria-label="Actualizar chats">↻</button></header><div className={styles.messageArea}>{messages.map((message) => { const own = Number(message.usuario_id) === Number(user.id_usuario); const editing = Number(editingMessageId) === Number(message.id); return <article key={message.id} className={`${styles.message} ${own ? styles.own : ""}`}><strong>{own ? "Vos" : message.remitente_nombre || "Usuario"}</strong>{editing ? <form className={styles.editForm} onSubmit={(event) => saveMessage(event, message)}><textarea autoFocus value={editingContent} onChange={(event) => setEditingContent(event.target.value)} maxLength={4000} rows={2} /><div><button type="button" onClick={() => { setEditingMessageId(null); setEditingContent(""); }}>Cancelar</button><button type="submit" disabled={!editingContent.trim() || savingMessage}>{savingMessage ? "Guardando…" : "Guardar"}</button></div></form> : <><p>{message.contenido}</p><div className={styles.messageMeta}><time>{new Date(message.fecha_envio).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}{message.editado ? " · editado" : ""}</time>{own && <span className={styles.messageActions}><button type="button" onClick={() => beginEdit(message)}>Editar</button><button type="button" onClick={() => deleteMessage(message)}>Eliminar</button></span>}</div></>}</article>; })}<div ref={endRef}/>{!messages.length && <p className={styles.emptyConversation}>Todavía no hay mensajes. ¡Mandá el primero!</p>}</div><form className={styles.composer} onSubmit={sendMessage}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Escribí un mensaje…" maxLength={4000}/><button disabled={!conectado || !draft.trim()}>Enviar <span>↑</span></button></form></> : <div className={styles.welcome}><div className={styles.welcomeIcon}>✉</div><h2>Tu comunidad, más cerca</h2><p>Elegí una conversación para ver los mensajes o iniciá un chat con alguien de EducaLink.</p><button onClick={() => setCreating(true)}>＋ Nuevo chat</button></div>}
       {error && <div className={styles.toast} role="alert">{error}<button onClick={() => setError("")}>×</button></div>}
     </section>
       {creating && <div className={styles.overlay} onMouseDown={(event) => { if (event.target === event.currentTarget) setCreating(false); }}><form className={styles.modal} onSubmit={createType === "direct" ? createChat : createGroup}><button type="button" className={styles.close} onClick={() => setCreating(false)}>×</button><span className={styles.modalIcon}>{createType === "direct" ? "✉" : "◉"}</span><h2>{createType === "direct" ? "Nuevo chat" : "Nuevo grupo"}</h2><div className={styles.modeSwitch}><button type="button" className={createType === "direct" ? styles.modeActive : ""} onClick={() => { setCreateType("direct"); setError(""); }}>Individual</button><button type="button" className={createType === "group" ? styles.modeActive : ""} onClick={() => { setCreateType("group"); setError(""); }}>Grupal</button></div>{createType === "direct" ? <><p>Ingresá el correo de la persona con quien querés conversar.</p><label>Correo electrónico<input autoFocus type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="alguien@pioix.edu.ar"/></label></> : <><p>Creá una conversación para tu equipo o grupo de clase.</p><label>Nombre del grupo<input autoFocus required maxLength={100} value={groupName} onChange={(event) => setGroupName(event.target.value)} placeholder="Ej.: Grupo de estudio"/></label><label className={styles.secondLabel}>Correos de participantes<input required value={groupEmails} onChange={(event) => setGroupEmails(event.target.value)} placeholder="Separá los correos con coma"/><small>Agregá al menos dos personas además de vos.</small></label></>}{error && <small className={styles.formError}>{error}</small>}<button className={styles.createButton}>{createType === "direct" ? "Iniciar conversación" : "Crear grupo"}</button></form></div>}

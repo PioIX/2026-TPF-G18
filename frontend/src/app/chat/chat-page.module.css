@@ -80,3 +80,65 @@
     margin: 0;
     letter-spacing: -.5px
 }
+
+.messageMeta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px
+}
+
+.messageMeta time {
+    color: var(--muted);
+    font-size: 10px
+}
+
+.messageActions {
+    display: flex;
+    gap: 8px
+}
+
+.messageActions button,
+.editForm button {
+    padding: 3px 0;
+    border: 0;
+    background: transparent;
+    color: #3563bd;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer
+}
+
+.messageActions button:last-child {
+    color: #b34242
+}
+
+.editForm {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px
+}
+
+.editForm textarea {
+    width: 100%;
+    min-width: 220px;
+    resize: vertical;
+    padding: 9px 10px;
+    border: 1px solid #cbd8eb;
+    border-radius: 9px;
+    color: var(--ink);
+    font: inherit;
+    font-size: 13px
+}
+
+.editForm div {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px
+}
+
+.editForm button:disabled {
+    opacity: .55;
+    cursor: wait
+}
