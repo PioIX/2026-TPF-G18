@@ -1,3 +1,5 @@
+const { crearNotificaciones } = require("../modulos/notificaciones");
+
 module.exports = function attachChatSocket(io, pool) {
   io.use((socket, next) => {
     const userId = Number(socket.handshake.auth?.userId);
@@ -12,6 +14,7 @@ module.exports = function attachChatSocket(io, pool) {
   });
 
   io.on("connection", (socket) => {
+    socket.join(`usuario_${socket.userId}`);
     socket.on("join_chat", async (chatIdValue) => {
       const chatId = Number(chatIdValue);
       if (!chatId) return;
@@ -32,7 +35,17 @@ module.exports = function attachChatSocket(io, pool) {
            m.editado, u.username AS remitente_nombre, u.foto AS remitente_foto
            FROM Mensajes m JOIN Usuarios_1 u ON u.id_usuario = m.id_usuario WHERE m.id_mensaje = ?`, [insert.insertId]
         );
-        if (rows.length) io.to(`chat_${chatId}`).emit("nuevo_mensaje", rows[0]);
+        if (rows.length) {
+          io.to(`chat_${chatId}`).emit("nuevo_mensaje", rows[0]);
+          const [participantes] = await pool.execute(
+            "SELECT id_usuario FROM Chats_por_Usuarios WHERE id_chat = ? AND id_usuario <> ?", [chatId, socket.userId]
+          );
+          await crearNotificaciones(participantes.map((participante) => participante.id_usuario), {
+            titulo: "Nuevo mensaje",
+            mensaje: `${rows[0].remitente_nombre}: ${text.slice(0, 180)}`,
+            tipo: "CHAT",
+          }, io);
+        }
       } catch (error) { console.error("No se pudo guardar el mensaje:", error.message); }
     });
   });

@@ -1,4 +1,5 @@
 const pool = require("../config/database");
+const { crearNotificaciones } = require("./notificaciones");
 const ESTADOS = ["PRESENTE", "AUSENTE", "TARDE", "JUSTIFICADO"];
 
 async function listarAsistenciasAlumno(req, res, next) {
@@ -60,12 +61,14 @@ async function guardarAsistencia(req, res, next) {
     );
     if (!asignacion.length) return res.status(403).json({ error: "El docente no dicta esa materia." });
     const [matriculado] = await pool.execute(
-      `SELECT 1 FROM Materias_Dictadas md JOIN Matriculas ma ON ma.id_curso = md.id_curso
-       WHERE md.id_materia_dictada = ? AND ma.id_alumno = ? AND ma.estado = 'ACTIVA' LIMIT 1`, [idMateriaDictada, idAlumno]
+      `SELECT al.id_usuario FROM Materias_Dictadas md
+       JOIN Matriculas ma ON ma.id_curso = md.id_curso AND ma.estado = 'ACTIVA'
+       JOIN Alumnos al ON al.id_alumno = ma.id_alumno
+       WHERE md.id_materia_dictada = ? AND ma.id_alumno = ? LIMIT 1`, [idMateriaDictada, idAlumno]
     );
     if (!matriculado.length) return res.status(400).json({ error: "El alumno no pertenece al curso de esa materia." });
     const [previa] = await pool.execute(
-      `SELECT id_asistencia FROM Asistencias WHERE id_alumno = ? AND id_materia_dictada = ? AND fecha = ? LIMIT 1`,
+      `SELECT id_asistencia, estado FROM Asistencias WHERE id_alumno = ? AND id_materia_dictada = ? AND fecha = ? LIMIT 1`,
       [idAlumno, idMateriaDictada, fecha]
     );
     if (previa.length) {
@@ -75,6 +78,13 @@ async function guardarAsistencia(req, res, next) {
         `INSERT INTO Asistencias (id_alumno, id_materia_dictada, fecha, estado, observacion) VALUES (?, ?, ?, ?, ?)`,
         [idAlumno, idMateriaDictada, fecha, estado, observacion || null]
       );
+    }
+    if (!previa.length || previa[0].estado !== estado) {
+      await crearNotificaciones([matriculado[0].id_usuario], {
+        titulo: "Asistencia actualizada",
+        mensaje: `Tu asistencia del ${fecha} quedó registrada como ${estado.toLowerCase()}.`,
+        tipo: "ASISTENCIA",
+      }, req.app.get("io"));
     }
     res.json({ ok: true, mensaje: "Asistencia guardada." });
   } catch (error) { next(error); }

@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { useAcademicUser, AcademicLayout, API, styles } from "./AcademicPage";
 
 const LINKS_ALUMNO = [
-  { href: "/alumno", label: "Inicio" }, { href: "/alumno/materias", label: "Materias" }, { href: "/alumno/asistencias", label: "Asistencias" }, { href: "/alumno/calificaciones", label: "Calificaciones" }, { href: "/alumno/tareas", label: "Tareas" }, { href: "/chat", label: "Chat" },
+  { href: "/alumno", label: "Inicio" }, { href: "/alumno/materias", label: "Materias" }, { href: "/alumno/asistencias", label: "Asistencias" }, { href: "/alumno/calificaciones", label: "Calificaciones" }, { href: "/alumno/tareas", label: "Tareas" }, { href: "/chat", label: "Chat" }, { href: "/notificaciones", label: "Notificaciones" },
 ];
 const LINKS_DOCENTE = [
-  { href: "/docente", label: "Inicio" }, { href: "/docente/materias", label: "Materias" }, { href: "/docente/asistencias", label: "Asistencias" }, { href: "/docente/calificaciones", label: "Calificaciones" }, { href: "/docente/tareas", label: "Tareas" }, { href: "/chat", label: "Chat" },
+  { href: "/docente", label: "Inicio" }, { href: "/docente/materias", label: "Materias" }, { href: "/docente/asistencias", label: "Asistencias" }, { href: "/docente/calificaciones", label: "Calificaciones" }, { href: "/docente/tareas", label: "Tareas" }, { href: "/chat", label: "Chat" }, { href: "/notificaciones", label: "Notificaciones" },
 ];
 
 function fechaLocalActual() {
@@ -167,7 +167,7 @@ export function AsistenciasDocente() {
     <section className={styles.panel}><div className={styles.filterBar}><SelectorMateria materias={materias} value={materiaId} onChange={setMateriaId} /><label>Fecha<input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></label><button className={styles.formButton} type="button" onClick={guardar} disabled={!alumnos.length}>Guardar asistencia</button></div>
       {cargando && <p className={styles.panelEmpty}>Cargando alumnos…</p>}{error && <p className={styles.error} role="alert">{error}</p>}{mensaje && <p className={styles.notice}>{mensaje}</p>}{!cargando && materiaId && alumnos.length === 0 && !error && <p className={styles.panelEmpty}>No hay alumnos activos en este curso.</p>}
       {alumnos.length > 0 && <div className={styles.tableWrap}><table className={styles.workflowTable}><thead><tr><th>Alumno</th><th>DNI</th><th>Asistencia</th><th>Observación</th></tr></thead><tbody>{alumnos.map((al) => <tr key={al.id_alumno}><td><strong>{al.apellido}, {al.nombre}</strong></td><td>{al.dni || "—"}</td><td><select value={estado[al.id_alumno]?.estado || "PRESENTE"} onChange={(e) => setEstado({ ...estado, [al.id_alumno]: { ...estado[al.id_alumno], estado: e.target.value } })}>{["PRESENTE", "AUSENTE", "TARDE", "JUSTIFICADO"].map((s) => <option key={s}>{s}</option>)}</select></td><td><input value={estado[al.id_alumno]?.observacion || ""} onChange={(e) => setEstado({ ...estado, [al.id_alumno]: { ...estado[al.id_alumno], observacion: e.target.value } })} /></td></tr>)}</tbody></table></div>}
-    </div></section>
+    </section>
   </AcademicLayout>;
 }
 

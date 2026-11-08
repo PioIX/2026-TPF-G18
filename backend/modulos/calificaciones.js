@@ -1,4 +1,5 @@
 const pool = require("../config/database");
+const { crearNotificaciones } = require("./notificaciones");
 const TIPOS = ["EXAMEN", "TRABAJO", "TP", "PARCIAL", "OTRO"];
 
 async function listarCalificacionesAlumno(req, res, next) {
@@ -55,9 +56,10 @@ async function crearCalificacion(req, res, next) {
   }
   try {
     const [valida] = await pool.execute(
-      `SELECT 1 FROM Dictados_Docentes dd JOIN Docentes d ON d.id_docente = dd.id_docente
+      `SELECT al.id_usuario FROM Dictados_Docentes dd JOIN Docentes d ON d.id_docente = dd.id_docente
        JOIN Materias_Dictadas md ON md.id_materia_dictada = dd.id_materia_dictada
        JOIN Matriculas ma ON ma.id_curso = md.id_curso AND ma.estado = 'ACTIVA'
+       JOIN Alumnos al ON al.id_alumno = ma.id_alumno
        WHERE d.id_usuario = ? AND md.id_materia_dictada = ? AND ma.id_alumno = ? LIMIT 1`,
       [idUsuario, idMateriaDictada, idAlumno]
     );
@@ -66,6 +68,11 @@ async function crearCalificacion(req, res, next) {
       `INSERT INTO Calificaciones (id_alumno, id_materia_dictada, tipo, descripcion, nota, fecha) VALUES (?, ?, ?, ?, ?, ?)`,
       [idAlumno, idMateriaDictada, tipo, descripcion || null, nota, fecha]
     );
+    await crearNotificaciones([valida[0].id_usuario], {
+      titulo: "Nueva calificación",
+      mensaje: `${tipo}: ${nota}${descripcion ? ` · ${descripcion}` : ""}`,
+      tipo: "CALIFICACION",
+    }, req.app.get("io"));
     res.status(201).json({ ok: true, id_calificacion: resultado.insertId, mensaje: "Calificación guardada." });
   } catch (error) { next(error); }
 }

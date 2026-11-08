@@ -1,4 +1,5 @@
 const pool = require("../config/database");
+const { crearNotificaciones } = require("./notificaciones");
 
 async function listarTareasAlumno(req, res, next) {
   const idUsuario = Number(req.params.idUsuario);
@@ -65,6 +66,19 @@ async function crearTarea(req, res, next) {
        VALUES (?, ?, ?, ?, ?, ?, 'ACTIVA')`,
       [idMateriaDictada, docentes[0].id_docente, titulo, descripcion || null, fechaEntrega, archivo || null]
     );
+    const [alumnos] = await pool.execute(
+      `SELECT DISTINCT al.id_usuario, m.nombre AS materia
+       FROM Materias_Dictadas md
+       JOIN Materias m ON m.id_materia = md.id_materia
+       JOIN Matriculas ma ON ma.id_curso = md.id_curso AND ma.estado = 'ACTIVA'
+       JOIN Alumnos al ON al.id_alumno = ma.id_alumno
+       WHERE md.id_materia_dictada = ?`, [idMateriaDictada]
+    );
+    await crearNotificaciones(alumnos.map((alumno) => alumno.id_usuario), {
+      titulo: "Nueva tarea",
+      mensaje: `${titulo} · ${alumnos[0]?.materia || "Materia"}`,
+      tipo: "TAREA",
+    }, req.app.get("io"));
     res.status(201).json({ ok: true, id_tarea: resultado.insertId, mensaje: "Tarea publicada." });
   } catch (error) { next(error); }
 }
@@ -77,7 +91,7 @@ async function entregarTarea(req, res, next) {
   if (!Number.isInteger(idUsuario) || idUsuario <= 0 || !Number.isInteger(idTarea) || idTarea <= 0 || (!archivo && !comentario)) return res.status(400).json({ error: "Adjuntá una ruta de archivo o escribí un comentario." });
   try {
     const [pertenece] = await pool.execute(
-      `SELECT al.id_alumno, t.fecha_entrega FROM Alumnos al
+      `SELECT al.id_alumno, al.nombre AS alumno_nombre, al.apellido AS alumno_apellido, t.fecha_entrega FROM Alumnos al
        JOIN Matriculas ma ON ma.id_alumno = al.id_alumno AND ma.estado = 'ACTIVA'
        JOIN Materias_Dictadas md ON md.id_curso = ma.id_curso
        JOIN Tareas t ON t.id_materia_dictada = md.id_materia_dictada AND t.id_tarea = ? AND t.estado = 'ACTIVA'
@@ -92,6 +106,14 @@ async function entregarTarea(req, res, next) {
     } else {
       await pool.execute(`INSERT INTO Entregas (id_tarea, id_alumno, archivo, comentario, estado) VALUES (?, ?, ?, ?, ?)`, [idTarea, idAlumno, archivo || null, comentario || null, estado]);
     }
+    const [docentes] = await pool.execute(
+      `SELECT d.id_usuario FROM Tareas t JOIN Docentes d ON d.id_docente = t.id_docente WHERE t.id_tarea = ?`, [idTarea]
+    );
+    await crearNotificaciones(docentes.map((docente) => docente.id_usuario), {
+      titulo: previa.length ? "Entrega actualizada" : "Nueva entrega",
+      mensaje: `${pertenece[0].alumno_apellido}, ${pertenece[0].alumno_nombre} entregó una tarea.`,
+      tipo: "TAREA",
+    }, req.app.get("io"));
     res.json({ ok: true, mensaje: "Entrega guardada." });
   } catch (error) { next(error); }
 }

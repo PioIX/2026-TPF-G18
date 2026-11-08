@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import useSocket from "@/hooks/useSocket";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
@@ -21,6 +22,9 @@ export default function AdminPage() {
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(true);
+  const [notificacionesNoLeidas, setNotificacionesNoLeidas] = useState(0);
+  const [adminId, setAdminId] = useState(null);
+  const { socket } = useSocket(adminId);
 
   useEffect(() => {
     const guardado = sessionStorage.getItem("educalink_usuario");
@@ -36,12 +40,38 @@ export default function AdminPage() {
         router.replace("/");
         return;
       }
+      setAdminId(Number(usuario.id_usuario));
       cargarUsuarios();
     } catch {
       sessionStorage.removeItem("educalink_usuario");
       router.replace("/login");
     }
   }, [router]);
+
+  useEffect(() => {
+    if (!adminId) return undefined;
+    let vigente = true;
+    const cargar = async () => {
+      try {
+        const respuesta = await fetch(`${API}/notificaciones/${adminId}?soloNoLeidas=1`);
+        const datos = await respuesta.json();
+        if (vigente && respuesta.ok) setNotificacionesNoLeidas(Number(datos.noLeidas) || 0);
+      } catch { /* Se reintentará al cambiar de sección o recibir otra notificación. */ }
+    };
+    cargar();
+    window.addEventListener("educalink:refrescar-notificaciones", cargar);
+    return () => {
+      vigente = false;
+      window.removeEventListener("educalink:refrescar-notificaciones", cargar);
+    };
+  }, [adminId]);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+    const actualizar = () => window.dispatchEvent(new Event("educalink:refrescar-notificaciones"));
+    socket.on("nueva_notificacion", actualizar);
+    return () => socket.off("nueva_notificacion", actualizar);
+  }, [socket]);
 
   async function cargarUsuarios(filtro = busqueda) {
     setCargando(true);
@@ -116,6 +146,7 @@ export default function AdminPage() {
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: 32, color: "#17213d" }}>
       <h1>Gestión de usuarios</h1>
       <p>Creá cuentas y administrá el acceso de alumnos, docentes y administradores.</p>
+      <p><a href="/notificaciones">♧ Notificaciones{notificacionesNoLeidas > 0 ? ` (${notificacionesNoLeidas})` : ""}</a></p>
 
       {error && <p role="alert" style={{ color: "#a62e35" }}>{error}</p>}
       {mensaje && <p role="status" style={{ color: "#237447" }}>{mensaje}</p>}
