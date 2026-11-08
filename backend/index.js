@@ -23,9 +23,10 @@ app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: "1mb" }));
 
 const io = new Server(server, {
-  cors: { origin: allowedOrigins, methods: ["GET", "POST", "PATCH"] },
+  cors: { origin: allowedOrigins, methods: ["GET", "POST", "PATCH", "DELETE"] },
 });
 
+app.set("io", io);
 app.use("/api/auth", authRoutes);
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/chats", chatRoutes);
