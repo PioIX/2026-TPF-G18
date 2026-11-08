@@ -44,19 +44,59 @@ function SelectorMateria({ materias, value, onChange }) {
   return <label>Materia<select value={value} onChange={(e) => onChange(e.target.value)} required><option value="">Elegí una materia</option>{materias.map((m) => <option value={m.id_materia_dictada} key={m.id_materia_dictada}>{m.nombre} · {m.anio}° {m.division}</option>)}</select></label>;
 }
 
-function Card({ title, children }) {
-  return <article className={styles.card}><h2 style={{ margin: "0 0 12px", fontSize: 18 }}>{title}</h2>{children}</article>;
-}
-
 function RoleHome({ rol, title, links }) {
   const usuario = useAcademicUser(rol);
-  return <AcademicLayout title={title} description={`Hola${usuario?.username ? `, ${usuario.username}` : ""}. Elegí una sección para continuar.`} usuario={usuario} links={links}>
-    <section className={styles.grid}>{links.filter((l) => l.href !== `/${rol.toLowerCase()}`).map((link) => <a className={styles.card} href={link.href} key={link.href} style={{ textDecoration: "none", color: "inherit" }}><strong>{link.label}</strong><p style={{ color: "#64748b", marginBottom: 0 }}>Abrir sección</p></a>)}</section>
+  const [datos, setDatos] = useState({ materias: [], tareas: [], notas: [], asistencias: [] });
+  const [cargando, setCargando] = useState(true);
+  useEffect(() => {
+    if (!usuario) return;
+    let vigente = true;
+    const rutas = rol === "ALUMNO"
+      ? [["materias", "materias/alumno"], ["tareas", "tareas/alumno"], ["notas", "calificaciones/alumno"], ["asistencias", "asistencias/alumno"]]
+      : [["materias", "materias/docente"], ["tareas", "tareas/docente"], ["notas", "calificaciones/docente"]];
+    Promise.allSettled(rutas.map(async ([key, ruta]) => [key, await jsonFetch(`${API}/${ruta}/${usuario.id_usuario}`)]))
+      .then((resultados) => {
+        if (!vigente) return;
+        const siguiente = { materias: [], tareas: [], notas: [], asistencias: [] };
+        resultados.forEach((resultado) => {
+          if (resultado.status === "fulfilled") {
+            const [key, data] = resultado.value;
+            siguiente[key] = data[key] || [];
+          }
+        });
+        setDatos(siguiente);
+      })
+      .finally(() => vigente && setCargando(false));
+    return () => { vigente = false; };
+  }, [usuario, rol]);
+
+  const pendientes = datos.tareas.filter((t) => rol === "ALUMNO" ? !t.id_entrega && t.estado === "ACTIVA" : t.estado === "ACTIVA");
+  const promedio = datos.notas.length ? (datos.notas.reduce((total, nota) => total + Number(nota.nota || 0), 0) / datos.notas.length).toFixed(2) : "—";
+  const tarjetas = rol === "ALUMNO"
+    ? [["Materias", datos.materias.length, "▤"], ["Tareas pendientes", pendientes.length, "☷"], ["Promedio", promedio, "▦"], ["Asistencias cargadas", datos.asistencias.length, "✓"]]
+    : [["Cursos asignados", datos.materias.length, "▤"], ["Tareas activas", pendientes.length, "☷"], ["Calificaciones", datos.notas.length, "▦"]];
+
+  return <AcademicLayout title={title} description={`Hola${usuario?.username ? `, ${usuario.username}` : ""}. Este es tu resumen académico.`} usuario={usuario} links={links}>
+    <section className={styles.stats}>{tarjetas.map(([label, value, icon]) => <article className={styles.statCard} key={label}><span className={styles.statIcon}>{icon}</span><span>{label}</span><strong>{cargando ? "…" : value}</strong></article>)}</section>
+    <section className={styles.dashboardGrid}>
+      <article className={styles.panel}>
+        <div className={styles.panelHeading}><div><h2>{rol === "ALUMNO" ? "Mis materias" : "Materias asignadas"}</h2><p>{datos.materias.length} cursos activos</p></div><a href={`/${rol.toLowerCase()}/materias`}>Ver todas <span>›</span></a></div>
+        {datos.materias.length ? <div className={styles.dashboardRows}>{datos.materias.slice(0, 4).map((materia) => <div className={styles.dashboardRow} key={materia.id_materia_dictada}><span className={styles.rowIcon}>▤</span><div><strong>{materia.nombre}</strong><small>{materia.anio}° {materia.division} · {materia.orientacion || materia.rol}</small></div><span className={styles.rowArrow}>›</span></div>)}</div> : <p className={styles.panelEmpty}>{cargando ? "Cargando materias…" : "No hay materias para mostrar todavía."}</p>}
+      </article>
+      <article className={styles.panel}>
+        <div className={styles.panelHeading}><div><h2>{rol === "ALUMNO" ? "Próximas tareas" : "Actividad reciente"}</h2><p>{rol === "ALUMNO" ? "Entregas pendientes" : "Tareas que publicaste"}</p></div><a href={`/${rol.toLowerCase()}/tareas`}>Ver todas <span>›</span></a></div>
+        {datos.tareas.length ? <div className={styles.dashboardRows}>{datos.tareas.slice(0, 4).map((tarea) => <div className={styles.dashboardRow} key={tarea.id_tarea}><span className={`${styles.rowIcon} ${styles.rowIconAccent}`}>☷</span><div><strong>{tarea.titulo}</strong><small>{tarea.materia} · {tarea.fecha_entrega ? new Date(tarea.fecha_entrega).toLocaleDateString("es-AR") : "Sin fecha límite"}</small></div><span className={styles.rowArrow}>›</span></div>)}</div> : <p className={styles.panelEmpty}>{cargando ? "Cargando tareas…" : "No hay tareas publicadas."}</p>}
+      </article>
+      <article className={`${styles.panel} ${styles.quickPanel}`}>
+        <div className={styles.panelHeading}><div><h2>Accesos rápidos</h2><p>Ir directo a una sección</p></div></div>
+        {links.filter((link) => link.href !== `/${rol.toLowerCase()}`).map((link) => <a className={styles.quickLink} href={link.href} key={link.href}><span>{link.label}</span><span>›</span></a>)}
+      </article>
+    </section>
   </AcademicLayout>;
 }
 
-export function AlumnoHome() { return <RoleHome rol="ALUMNO" title="Inicio de alumno" links={LINKS_ALUMNO} />; }
-export function DocenteHome() { return <RoleHome rol="DOCENTE" title="Inicio de docente" links={LINKS_DOCENTE} />; }
+export function AlumnoHome() { return <RoleHome rol="ALUMNO" title="Inicio" links={LINKS_ALUMNO} />; }
+export function DocenteHome() { return <RoleHome rol="DOCENTE" title="Inicio" links={LINKS_DOCENTE} />; }
 
 export function TareasAlumno() {
   const usuario = useAcademicUser("ALUMNO");
@@ -65,6 +105,7 @@ export function TareasAlumno() {
   const [mensaje, setMensaje] = useState("");
   const [errorForm, setErrorForm] = useState("");
   const [guardando, setGuardando] = useState(null);
+  const [filtro, setFiltro] = useState("TODAS");
   async function entregar(event, idTarea) {
     event.preventDefault(); setErrorForm(""); setMensaje(""); setGuardando(idTarea);
     try {
@@ -73,10 +114,18 @@ export function TareasAlumno() {
       window.location.reload();
     } catch (e) { setErrorForm(e.message); } finally { setGuardando(null); }
   }
-  return <AcademicLayout title="Tareas" description="Consultá las consignas y registrá tus entregas." usuario={usuario} links={LINKS_ALUMNO}>
-    {cargando && <p className={styles.notice}>Cargando tareas…</p>}{error && <p className={styles.error}>{error}</p>}{errorForm && <p className={styles.error} role="alert">{errorForm}</p>}{mensaje && <p className={styles.notice}>{mensaje}</p>}
-    {!cargando && !error && items.length === 0 && <p className={styles.notice}>No hay tareas para tus cursos.</p>}
-    <section className={styles.grid}>{items.map((t) => <Card key={t.id_tarea} title={t.titulo}><div className={styles.field}><span>Materia y curso</span><strong>{t.materia} · {t.anio}° {t.division}</strong></div><div className={styles.field}><span>Consigna</span><strong>{t.descripcion || "Sin descripción"}</strong></div><div className={styles.field}><span>Entrega hasta</span><strong>{t.fecha_entrega ? new Date(t.fecha_entrega).toLocaleString("es-AR") : "Sin fecha límite"}</strong></div><div className={styles.field}><span>Estado</span><strong>{t.estado_entrega || t.estado}</strong></div>{t.archivo_adjunto && <p><a href={t.archivo_adjunto} target="_blank" rel="noreferrer">Abrir material adjunto</a></p>}{t.id_entrega ? <p>Tu entrega: {t.comentario_entrega || t.archivo_entregado || "Registrada"}</p> : null}{t.estado === "ACTIVA" && !t.id_entrega && <form className={styles.form} style={{ margin: "14px 0 0", padding: 0, border: 0, boxShadow: "none" }} onSubmit={(e) => entregar(e, t.id_tarea)}><label>Enlace o ruta del archivo<input value={campos[t.id_tarea]?.archivo || ""} onChange={(e) => setCampos({ ...campos, [t.id_tarea]: { ...campos[t.id_tarea], archivo: e.target.value } })} /></label><label>Comentario<textarea value={campos[t.id_tarea]?.comentario || ""} onChange={(e) => setCampos({ ...campos, [t.id_tarea]: { ...campos[t.id_tarea], comentario: e.target.value } })} rows="2" /></label><button type="submit" disabled={guardando === t.id_tarea}>Entregar</button></form>}</Card>)}</section>
+  const visibles = items.filter((t) => filtro === "TODAS" || (filtro === "ENTREGADAS" ? Boolean(t.id_entrega) : !t.id_entrega));
+  return <AcademicLayout title="Tareas" description="Revisá las consignas y seguí el estado de tus entregas." usuario={usuario} links={LINKS_ALUMNO}>
+    <section className={styles.assignmentBoard}>
+      <div className={styles.assignmentToolbar}><div><h2>Mis tareas</h2><p>{items.length} tareas asignadas</p></div><div className={styles.filterTabs}>{[["TODAS", "Todas"], ["PENDIENTES", "Pendientes"], ["ENTREGADAS", "Entregadas"]].map(([id, label]) => <button type="button" className={filtro === id ? styles.filterActive : ""} onClick={() => setFiltro(id)} key={id}>{label}</button>)}</div></div>
+      {cargando && <p className={styles.panelEmpty}>Cargando tareas…</p>}{error && <p className={styles.error} role="alert">{error}</p>}{errorForm && <p className={styles.error} role="alert">{errorForm}</p>}{mensaje && <p className={styles.notice}>{mensaje}</p>}
+      {!cargando && !error && !visibles.length && <p className={styles.panelEmpty}>{filtro === "TODAS" ? "No hay tareas para tus cursos." : "No hay tareas en este filtro."}</p>}
+      <div className={styles.assignmentList}>{visibles.map((t) => <article className={styles.assignmentRow} key={t.id_tarea}>
+        <div className={styles.assignmentMain}><span className={styles.subjectPill}>{t.materia}</span><div><h3>{t.titulo}</h3><p>{t.descripcion || "Sin descripción"}</p><small>{t.anio}° {t.division} · Vence: {t.fecha_entrega ? new Date(t.fecha_entrega).toLocaleString("es-AR") : "Sin fecha límite"}</small>{t.archivo_adjunto && <a className={styles.materialLink} href={t.archivo_adjunto} target="_blank" rel="noreferrer">Abrir material adjunto</a>}</div></div>
+        <div className={styles.assignmentStatus}><span className={`${styles.badge} ${t.id_entrega ? styles.badgeCORREGIDA : t.estado === "ACTIVA" ? styles.badgeACTIVA : ""}`}>{t.estado_entrega || (t.id_entrega ? "ENTREGADA" : t.estado)}</span>{t.id_entrega && <small>{t.comentario_entrega || t.archivo_entregado || "Entrega recibida"}</small>}</div>
+        {t.estado === "ACTIVA" && !t.id_entrega && <form className={styles.deliveryForm} onSubmit={(e) => entregar(e, t.id_tarea)}><label>Enlace o ruta del archivo<input value={campos[t.id_tarea]?.archivo || ""} onChange={(e) => setCampos({ ...campos, [t.id_tarea]: { ...campos[t.id_tarea], archivo: e.target.value } })} /></label><label>Comentario<textarea rows="1" value={campos[t.id_tarea]?.comentario || ""} onChange={(e) => setCampos({ ...campos, [t.id_tarea]: { ...campos[t.id_tarea], comentario: e.target.value } })} /></label><button type="submit" disabled={guardando === t.id_tarea}>{guardando === t.id_tarea ? "Enviando…" : "Entregar"}</button></form>}
+      </article>)}</div>
+    </section>
   </AcademicLayout>;
 }
 
@@ -91,10 +140,10 @@ export function TareasDocente() {
     try { const data = await jsonFetch(`${API}/tareas`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, id_usuario: usuario.id_usuario, id_materia_dictada: Number(form.id_materia_dictada), fecha_entrega: form.fecha_entrega || null }) }); setMensaje(data.mensaje); window.location.reload(); }
     catch (e) { setErrorForm(e.message); } finally { setGuardando(false); }
   }
-  return <AcademicLayout title="Tareas" description="Publicá consignas y consultá cuántas entregas recibiste." usuario={usuario} links={LINKS_DOCENTE}>
-    <form className={styles.form} onSubmit={publicar}><h2>Publicar tarea</h2><SelectorMateria materias={materias} value={form.id_materia_dictada} onChange={(v) => setForm({ ...form, id_materia_dictada: v })} /><label>Título<input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} required maxLength="150" /></label><label>Fecha límite<input type="datetime-local" value={form.fecha_entrega} onChange={(e) => setForm({ ...form, fecha_entrega: e.target.value })} /></label><label>Descripción<textarea value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} rows="3" /></label><label>Enlace al material adjunto<input value={form.archivo_adjunto} onChange={(e) => setForm({ ...form, archivo_adjunto: e.target.value })} maxLength="255" /></label><button disabled={guardando || !usuario}>Publicar</button></form>
-    {mensaje && <p className={styles.notice}>{mensaje}</p>}{errorForm && <p className={styles.error}>{errorForm}</p>}{error && <p className={styles.error}>{error}</p>}{cargando && <p className={styles.notice}>Cargando tareas…</p>}{!cargando && tareas.length === 0 && <p className={styles.notice}>Todavía no publicaste tareas.</p>}
-    <section className={styles.grid}>{tareas.map((t) => <Card key={t.id_tarea} title={t.titulo}><div className={styles.field}><span>Materia y curso</span><strong>{t.materia} · {t.anio}° {t.division}</strong></div><div className={styles.field}><span>Estado</span><strong>{t.estado}</strong></div><div className={styles.field}><span>Fecha límite</span><strong>{t.fecha_entrega ? new Date(t.fecha_entrega).toLocaleString("es-AR") : "Sin fecha"}</strong></div><div className={styles.field}><span>Entregas recibidas</span><strong>{t.cantidad_entregas}</strong></div></Card>)}</section>
+  return <AcademicLayout title="Tareas" description="Publicá consignas y revisá las entregas de tus cursos." usuario={usuario} links={LINKS_DOCENTE}>
+    <form className={styles.form} onSubmit={publicar}><h2>Publicar tarea</h2><SelectorMateria materias={materias} value={form.id_materia_dictada} onChange={(v) => setForm({ ...form, id_materia_dictada: v })} /><label>Título<input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} required maxLength="150" /></label><label>Fecha límite<input type="datetime-local" value={form.fecha_entrega} onChange={(e) => setForm({ ...form, fecha_entrega: e.target.value })} /></label><label>Descripción<textarea value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} rows="3" /></label><label>Enlace al material adjunto<input value={form.archivo_adjunto} onChange={(e) => setForm({ ...form, archivo_adjunto: e.target.value })} maxLength="255" /></label><button disabled={guardando || !usuario}>{guardando ? "Publicando…" : "Publicar tarea"}</button></form>
+    {mensaje && <p className={styles.notice}>{mensaje}</p>}{errorForm && <p className={styles.error} role="alert">{errorForm}</p>}{error && <p className={styles.error}>{error}</p>}{cargando && <p className={styles.notice}>Cargando tareas…</p>}
+    <section className={styles.assignmentBoard}><div className={styles.assignmentToolbar}><div><h2>Tareas publicadas</h2><p>{tareas.length} en total</p></div></div>{!cargando && !tareas.length && <p className={styles.panelEmpty}>Todavía no publicaste tareas.</p>}<div className={styles.assignmentList}>{tareas.map((t) => <article className={styles.assignmentRow} key={t.id_tarea}><div className={styles.assignmentMain}><span className={styles.subjectPill}>{t.materia}</span><div><h3>{t.titulo}</h3><p>{t.descripcion || "Sin descripción"}</p><small>{t.anio}° {t.division} · Límite: {t.fecha_entrega ? new Date(t.fecha_entrega).toLocaleString("es-AR") : "Sin fecha"}</small></div></div><div className={styles.assignmentStatus}><span className={`${styles.badge} ${t.estado === "ACTIVA" ? styles.badgeACTIVA : ""}`}>{t.estado}</span><small>{t.cantidad_entregas} entregas</small></div></article>)}</div></section>
   </AcademicLayout>;
 }
 
@@ -115,9 +164,10 @@ export function AsistenciasDocente() {
     catch (e) { setError(e.message); }
   }
   return <AcademicLayout title="Asistencias" description="Elegí una materia y registrá la asistencia del curso." usuario={usuario} links={LINKS_DOCENTE}>
-    <section className={styles.form}><SelectorMateria materias={materias} value={materiaId} onChange={setMateriaId} /><label>Fecha<input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></label></section>
-    {cargando && <p className={styles.notice}>Cargando alumnos…</p>}{error && <p className={styles.error} role="alert">{error}</p>}{mensaje && <p className={styles.notice}>{mensaje}</p>}{!cargando && materiaId && alumnos.length === 0 && !error && <p className={styles.notice}>No hay alumnos activos en este curso.</p>}
-    {alumnos.length > 0 && <><section className={styles.grid}>{alumnos.map((al) => <Card key={al.id_alumno} title={`${al.apellido}, ${al.nombre}`}><label>Estado<select value={estado[al.id_alumno]?.estado || "PRESENTE"} onChange={(e) => setEstado({ ...estado, [al.id_alumno]: { ...estado[al.id_alumno], estado: e.target.value } })}>{["PRESENTE", "AUSENTE", "TARDE", "JUSTIFICADO"].map((s) => <option key={s}>{s}</option>)}</select></label><label>Observación<input value={estado[al.id_alumno]?.observacion || ""} onChange={(e) => setEstado({ ...estado, [al.id_alumno]: { ...estado[al.id_alumno], observacion: e.target.value } })} /></label></Card>)}</section><div style={{ maxWidth: 1200, margin: "18px auto" }}><button className={styles.formButton} type="button" onClick={guardar}>Guardar asistencia del curso</button></div></>}
+    <section className={styles.panel}><div className={styles.filterBar}><SelectorMateria materias={materias} value={materiaId} onChange={setMateriaId} /><label>Fecha<input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></label><button className={styles.formButton} type="button" onClick={guardar} disabled={!alumnos.length}>Guardar asistencia</button></div>
+      {cargando && <p className={styles.panelEmpty}>Cargando alumnos…</p>}{error && <p className={styles.error} role="alert">{error}</p>}{mensaje && <p className={styles.notice}>{mensaje}</p>}{!cargando && materiaId && alumnos.length === 0 && !error && <p className={styles.panelEmpty}>No hay alumnos activos en este curso.</p>}
+      {alumnos.length > 0 && <div className={styles.tableWrap}><table className={styles.workflowTable}><thead><tr><th>Alumno</th><th>DNI</th><th>Asistencia</th><th>Observación</th></tr></thead><tbody>{alumnos.map((al) => <tr key={al.id_alumno}><td><strong>{al.apellido}, {al.nombre}</strong></td><td>{al.dni || "—"}</td><td><select value={estado[al.id_alumno]?.estado || "PRESENTE"} onChange={(e) => setEstado({ ...estado, [al.id_alumno]: { ...estado[al.id_alumno], estado: e.target.value } })}>{["PRESENTE", "AUSENTE", "TARDE", "JUSTIFICADO"].map((s) => <option key={s}>{s}</option>)}</select></td><td><input value={estado[al.id_alumno]?.observacion || ""} onChange={(e) => setEstado({ ...estado, [al.id_alumno]: { ...estado[al.id_alumno], observacion: e.target.value } })} /></td></tr>)}</tbody></table></div>}
+    </div></section>
   </AcademicLayout>;
 }
 
@@ -130,8 +180,8 @@ export function CalificacionesDocente() {
   useEffect(() => { if (!usuario || !materiaId) { setAlumnos([]); return; } let vigente = true; jsonFetch(`${API}/materias/docente/${usuario.id_usuario}/${materiaId}/alumnos`).then((d) => vigente && setAlumnos(d.alumnos || [])).catch((e) => vigente && setErrorForm(e.message)); return () => { vigente = false; }; }, [usuario, materiaId]);
   async function guardar(event) { event.preventDefault(); setGuardando(true); setErrorForm(""); setMensaje(""); try { const d = await jsonFetch(`${API}/calificaciones`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id_usuario: usuario.id_usuario, id_materia_dictada: Number(materiaId), ...form, id_alumno: Number(form.id_alumno), nota: Number(form.nota) }) }); setMensaje(d.mensaje); window.location.reload(); } catch (e) { setErrorForm(e.message); } finally { setGuardando(false); } }
   return <AcademicLayout title="Calificaciones" description="Cargá notas y consultá las evaluaciones registradas." usuario={usuario} links={LINKS_DOCENTE}>
-    <form className={styles.form} onSubmit={guardar}><h2>Cargar calificación</h2><SelectorMateria materias={materias} value={materiaId} onChange={(v) => { setMateriaId(v); setForm({ ...form, id_alumno: "" }); }} /><label>Alumno<select required value={form.id_alumno} onChange={(e) => setForm({ ...form, id_alumno: e.target.value })}><option value="">Elegí un alumno</option>{alumnos.map((a) => <option key={a.id_alumno} value={a.id_alumno}>{a.apellido}, {a.nombre}</option>)}</select></label><label>Tipo<select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>{["EXAMEN", "TRABAJO", "TP", "PARCIAL", "OTRO"].map((t) => <option key={t}>{t}</option>)}</select></label><label>Nota (0 a 10)<input type="number" min="0" max="10" step="0.01" required value={form.nota} onChange={(e) => setForm({ ...form, nota: e.target.value })} /></label><label>Fecha<input type="date" required value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} /></label><label>Descripción<input maxLength="150" value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} /></label><button disabled={guardando || !materiaId}>Guardar</button></form>
-    {mensaje && <p className={styles.notice}>{mensaje}</p>}{errorForm && <p className={styles.error} role="alert">{errorForm}</p>}{error && <p className={styles.error}>{error}</p>}{cargando && <p className={styles.notice}>Cargando calificaciones…</p>}{!cargando && calificaciones.length === 0 && <p className={styles.notice}>Todavía no cargaste calificaciones.</p>}
-    <section className={styles.grid}>{calificaciones.map((c) => <Card key={c.id_calificacion} title={`${c.alumno_apellido}, ${c.alumno_nombre}`}><div className={styles.field}><span>Materia y curso</span><strong>{c.materia} · {c.anio}° {c.division}</strong></div><div className={styles.field}><span>Evaluación</span><strong>{c.tipo}{c.descripcion ? ` · ${c.descripcion}` : ""}</strong></div><div className={styles.field}><span>Nota</span><strong>{c.nota}</strong></div><div className={styles.field}><span>Fecha</span><strong>{c.fecha}</strong></div></Card>)}</section>
+    <form className={styles.form} onSubmit={guardar}><h2>Cargar calificación</h2><SelectorMateria materias={materias} value={materiaId} onChange={(v) => { setMateriaId(v); setForm({ ...form, id_alumno: "" }); }} /><label>Alumno<select required value={form.id_alumno} onChange={(e) => setForm({ ...form, id_alumno: e.target.value })}><option value="">Elegí un alumno</option>{alumnos.map((a) => <option key={a.id_alumno} value={a.id_alumno}>{a.apellido}, {a.nombre}</option>)}</select></label><label>Tipo<select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>{["EXAMEN", "TRABAJO", "TP", "PARCIAL", "OTRO"].map((t) => <option key={t}>{t}</option>)}</select></label><label>Nota (0 a 10)<input type="number" min="0" max="10" step="0.01" required value={form.nota} onChange={(e) => setForm({ ...form, nota: e.target.value })} /></label><label>Fecha<input type="date" required value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} /></label><label>Descripción<input maxLength="150" value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} /></label><button disabled={guardando || !materiaId}>{guardando ? "Guardando…" : "Guardar calificación"}</button></form>
+    {mensaje && <p className={styles.notice}>{mensaje}</p>}{errorForm && <p className={styles.error} role="alert">{errorForm}</p>}{error && <p className={styles.error}>{error}</p>}{cargando && <p className={styles.notice}>Cargando calificaciones…</p>}
+    <section className={styles.tableCard}><div className={styles.tableTitle}><div><h2>Calificaciones registradas</h2><p>{calificaciones.length} registros</p></div></div>{!cargando && !calificaciones.length ? <p className={styles.panelEmpty}>Todavía no cargaste calificaciones.</p> : <div className={styles.tableWrap}><table className={styles.workflowTable}><thead><tr><th>Alumno</th><th>Materia</th><th>Evaluación</th><th>Nota</th><th>Fecha</th></tr></thead><tbody>{calificaciones.map((c) => <tr key={c.id_calificacion}><td><strong>{c.alumno_apellido}, {c.alumno_nombre}</strong></td><td>{c.materia} · {c.anio}° {c.division}</td><td>{c.tipo}{c.descripcion ? ` · ${c.descripcion}` : ""}</td><td><span className={styles.gradePill}>{c.nota}</span></td><td>{c.fecha}</td></tr>)}</tbody></table></div>}</section>
   </AcademicLayout>;
 }
