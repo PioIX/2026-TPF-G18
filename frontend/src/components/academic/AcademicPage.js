@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import useSocket from "@/hooks/useSocket";
 import styles from "./AcademicPage.module.css";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
@@ -29,6 +30,37 @@ export function useAcademicUser(rolEsperado) {
 export function AcademicLayout({ title, description, usuario, children, links }) {
   const pathname = usePathname();
   const inicio = RUTAS_POR_ROL[usuario?.rol] || "/login";
+  const [noLeidas, setNoLeidas] = useState(0);
+  const { socket } = useSocket(usuario?.id_usuario);
+  const navLinks = links.some((link) => link.href === "/notificaciones")
+    ? links
+    : [...links, { href: "/notificaciones", label: "Notificaciones" }];
+
+  useEffect(() => {
+    if (!usuario?.id_usuario) return undefined;
+    let vigente = true;
+    const cargarNoLeidas = async () => {
+      try {
+        const response = await fetch(`${API}/notificaciones/${usuario.id_usuario}?soloNoLeidas=1`);
+        const data = await response.json();
+        if (vigente && response.ok) setNoLeidas(Number(data.noLeidas) || 0);
+      } catch { /* El acceso a las notificaciones puede reintentarse al cambiar de sección. */ }
+    };
+    cargarNoLeidas();
+    window.addEventListener("educalink:refrescar-notificaciones", cargarNoLeidas);
+    return () => {
+      vigente = false;
+      window.removeEventListener("educalink:refrescar-notificaciones", cargarNoLeidas);
+    };
+  }, [usuario?.id_usuario, pathname]);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+    const actualizar = () => window.dispatchEvent(new Event("educalink:refrescar-notificaciones"));
+    socket.on("nueva_notificacion", actualizar);
+    return () => socket.off("nueva_notificacion", actualizar);
+  }, [socket]);
+
   function cerrarSesion() {
     sessionStorage.removeItem("educalink_usuario");
     window.location.href = "/login";
@@ -42,10 +74,11 @@ export function AcademicLayout({ title, description, usuario, children, links })
         </Link>
         <div className={styles.navCaption}>MENÚ PRINCIPAL</div>
         <nav className={styles.nav} aria-label="Secciones">
-          {links.map((link) => {
+          {navLinks.map((link) => {
             const activo = pathname === link.href;
             return <Link className={`${styles.navLink} ${activo ? styles.navLinkActive : ""}`} key={link.href} href={link.href} aria-current={activo ? "page" : undefined}>
               <span className={styles.navIcon} aria-hidden="true">{ICONOS[link.label] || "·"}</span><span>{link.label}</span>
+              {link.href === "/notificaciones" && noLeidas > 0 && <span className={styles.notificationBadge}>{noLeidas > 99 ? "99+" : noLeidas}</span>}
             </Link>;
           })}
         </nav>
@@ -62,7 +95,7 @@ export function AcademicLayout({ title, description, usuario, children, links })
         </header>
         <main className={styles.content}>
           <div className={styles.pageHeading}>
-            <div><p className={styles.eyebrow}>{usuario?.rol === "DOCENTE" ? "Portal docente" : "Portal del alumno"}</p><h1>{title}</h1><p className={styles.description}>{description}</p></div>
+          <div><p className={styles.eyebrow}>{usuario?.rol === "DOCENTE" ? "Portal docente" : usuario?.rol === "ADMIN" ? "Portal de administración" : "Portal del alumno"}</p><h1>{title}</h1><p className={styles.description}>{description}</p></div>
           </div>
           {children}
         </main>
