@@ -85,7 +85,7 @@ export default function GestionAcademicaPage() {
   return <AcademicLayout title="Gestión académica" description="Organizá cursos, materias, docentes y matrículas." usuario={usuario} links={LINKS_ADMIN}>
     <div className={styles.page}>
       <nav className={styles.tabs} aria-label="Gestión académica">
-        {[ ["cursos", "Cursos y materias"], ["orientaciones", "Orientaciones"], ["dictados", "Materias y docentes"], ["matriculas", "Matrículas"] ].map(([id, nombre]) => <button type="button" key={id} className={seccion === id ? styles.tabActive : ""} onClick={() => setSeccion(id)}>{nombre}</button>)}
+        {[["cursos", "Cursos y materias"], ["orientaciones", "Orientaciones"], ["dictados", "Materias y docentes"], ["matriculas", "Matrículas"]].map(([id, nombre]) => <button type="button" key={id} className={seccion === id ? styles.tabActive : ""} onClick={() => setSeccion(id)}>{nombre}</button>)}
       </nav>
 
       {error && <p className={styles.error} role="alert">{error}</p>}

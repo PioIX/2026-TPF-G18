@@ -1,0 +1,21 @@
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border, #dce5f1);
+  border-radius: 999px;
+  color: var(--ui-text, #294464);
+  background: var(--ui-surface, #fff);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 180ms ease, color 240ms ease, background 240ms ease, border-color 240ms ease, box-shadow 180ms ease;
+}
+.toggle:hover { transform: translateY(-1px); box-shadow: 0 5px 15px #244d7a18; }
+.icon { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; color: #fff; background: #315da3; font-size: 13px; transition: transform 280ms ease, background 240ms ease; }
+.toggle:hover .icon { transform: rotate(-18deg) scale(1.08); }
+.label { white-space: nowrap; }
+@media (max-width: 560px) { .label { display: none; } .toggle { width: 36px; justify-content: center; padding: 0; } }

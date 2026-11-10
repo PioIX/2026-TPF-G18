@@ -128,8 +128,9 @@ router.post("/grupo", async (req, res, next) => {
     if (users.length !== emails.length) { await connection.rollback(); return res.status(404).json({ error: "Uno o más correos no corresponden a cuentas activas." }); }
     const ids = [...new Set([userId, ...users.map((u) => Number(u.id_usuario))])];
     const [chat] = await connection.execute("INSERT INTO Chats (nombre, foto, es_grupal, activo) VALUES (?, ?, 1, 1)", [nombre, req.body.fotoGrupo || null]);
-    const values = ids.map(() => "(?, ?)").join(",");
-    await connection.execute(`INSERT INTO Chats_por_Usuarios (id_chat, id_usuario, administrador) VALUES ${values}`, ids.flatMap((id) => [chat.insertId, id]));
+    const values = ids.map(() => "(?, ?, ?)").join(",");
+    const memberships = ids.flatMap((id, index) => [chat.insertId, id, index === 0 ? 1 : 0]);
+    await connection.execute(`INSERT INTO Chats_por_Usuarios (id_chat, id_usuario, administrador) VALUES ${values}`, memberships);
     await connection.commit();
     res.status(201).json({ ok: true, chatId: chat.insertId });
   } catch (error) { await connection.rollback(); next(error); } finally { connection.release(); }

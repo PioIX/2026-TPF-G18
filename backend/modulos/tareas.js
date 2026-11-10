@@ -22,7 +22,30 @@ async function listarTareasAlumno(req, res, next) {
        ORDER BY t.fecha_entrega IS NULL, t.fecha_entrega, t.fecha_publicacion DESC`, [idUsuario]
     );
     res.json({ tareas });
-  } catch (error) { next(error); }
+  } catch (error) {
+    // La migración de la devolución docente puede no estar aplicada todavía.
+    // En ese caso las tareas igual se deben poder consultar y mostrar.
+    if (error.code !== "ER_BAD_FIELD_ERROR" || !String(error.message).includes("devolucion_docente")) return next(error);
+    try {
+      const [tareas] = await pool.execute(
+        `SELECT t.id_tarea, t.titulo, t.descripcion, t.fecha_publicacion, t.fecha_entrega,
+                t.archivo_adjunto, t.estado, m.nombre AS materia, md.id_materia_dictada,
+                c.anio, c.division, e.id_entrega, e.archivo AS archivo_entregado,
+                e.comentario AS comentario_entrega, NULL AS devolucion_docente,
+                e.fecha_entrega AS fecha_entrega_real, e.estado AS estado_entrega
+         FROM Alumnos al
+         JOIN Matriculas ma ON ma.id_alumno = al.id_alumno AND ma.estado = 'ACTIVA'
+         JOIN Materias_Dictadas md ON md.id_curso = ma.id_curso
+         JOIN Materias m ON m.id_materia = md.id_materia
+         JOIN Cursos c ON c.id_curso = md.id_curso
+         JOIN Tareas t ON t.id_materia_dictada = md.id_materia_dictada
+         LEFT JOIN Entregas e ON e.id_tarea = t.id_tarea AND e.id_alumno = al.id_alumno
+         WHERE al.id_usuario = ?
+         ORDER BY t.fecha_entrega IS NULL, t.fecha_entrega, t.fecha_publicacion DESC`, [idUsuario]
+      );
+      res.json({ tareas });
+    } catch (errorAlternativo) { next(errorAlternativo); }
+  }
 }
 
 async function listarTareasDocente(req, res, next) {
@@ -77,7 +100,7 @@ async function crearTarea(req, res, next) {
     );
     await crearNotificaciones(alumnos.map((alumno) => alumno.id_usuario), {
       titulo: "Nueva tarea",
-      mensaje: `${titulo} · ${alumnos[0]?.materia || "Materia"}`,
+      mensaje: `${titulo} · ${alumnos[0]?.materia || "Materia"}${descripcion ? `\n\nConsigna del docente:\n${descripcion}` : ""}`,
       tipo: "TAREA",
     }, req.app.get("io"));
     res.status(201).json({ ok: true, id_tarea: resultado.insertId, mensaje: "Tarea publicada." });
@@ -135,7 +158,7 @@ async function actualizarTarea(req, res, next) {
     await notificarAlumnosDeTarea(
       tarea.id_materia_dictada,
       "Tarea actualizada",
-      `${titulo} · ${tarea.materia}`,
+      `${titulo} · ${tarea.materia}${descripcion ? `\n\nConsigna del docente:\n${descripcion}` : ""}`,
       req.app.get("io")
     );
     res.json({ ok: true, mensaje: "Tarea actualizada." });
