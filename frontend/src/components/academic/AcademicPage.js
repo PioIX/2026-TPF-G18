@@ -32,9 +32,11 @@ export function AcademicLayout({ title, description, usuario, children, links })
   const inicio = RUTAS_POR_ROL[usuario?.rol] || "/login";
   const [noLeidas, setNoLeidas] = useState(0);
   const { socket } = useSocket(usuario?.id_usuario);
-  const navLinks = links.some((link) => link.href === "/notificaciones")
-    ? links
-    : [...links, { href: "/notificaciones", label: "Notificaciones" }];
+  const navLinks = [
+    ...links,
+    ...(!links.some((link) => link.href === "/notificaciones") ? [{ href: "/notificaciones", label: "Notificaciones" }] : []),
+    ...(!links.some((link) => link.href === "/perfil") ? [{ href: "/perfil", label: "Perfil" }] : []),
+  ];
 
   useEffect(() => {
     if (!usuario?.id_usuario) return undefined;
