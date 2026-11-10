@@ -1,8 +1,10 @@
 const express = require("express");
-const { listarTareasAlumno, listarTareasDocente, crearTarea, entregarTarea } = require("../modulos/tareas");
+const { listarTareasAlumno, listarTareasDocente, crearTarea, actualizarTarea, cambiarEstadoTarea, entregarTarea } = require("../modulos/tareas");
 const router = express.Router();
 router.get("/alumno/:idUsuario", listarTareasAlumno);
 router.get("/docente/:idUsuario", listarTareasDocente);
 router.post("/", crearTarea);
+router.patch("/:idTarea", actualizarTarea);
+router.patch("/:idTarea/estado", cambiarEstadoTarea);
 router.post("/:idTarea/entregas", entregarTarea);
 module.exports = router;

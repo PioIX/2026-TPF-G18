@@ -75,6 +75,8 @@
 .workflowTable th, .workflowTable td { padding: 13px 15px; border-top: 1px solid #edf0f5; color: #40516a; font-size: 13px; }
 .workflowTable th { color: #718097; background: #f7f9fc; font-size: 11px; text-transform: uppercase; }
 .workflowTable input, .workflowTable select { border: 1px solid #d8e0eb; border-radius: 8px; padding: 8px; color: #263851; background: white; }
+.editRecordButton { border: 1px solid #dce5f0; border-radius: 8px; padding: 7px 9px; color: #4269ad; background: #f8faff; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.editRecordButton:hover { border-color: #c3d4ef; background: #eff5ff; }
 @media (max-width: 780px) {
   .shell { display: block; }
   .sidebar { position: static; height: auto; padding: 13px 14px; }
@@ -132,6 +134,18 @@
 .subjectPill { flex: 0 0 auto; border-radius: 999px; padding: 6px 10px; color: #2d639e; background: #e4f0ff; font-size: 10px; font-weight: 700; }
 .assignmentStatus { display: grid; justify-items: end; gap: 7px; color: #8290a3; font-size: 11px; }
 .assignmentStatus small { max-width: 180px; overflow-wrap: anywhere; text-align: right; }
+.workflowActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.workflowActions button, .workflowFormActions button { border: 1px solid #dce5f0; border-radius: 8px; padding: 7px 9px; color: #4e6688; background: #fff; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
+.workflowActions button:hover, .workflowFormActions button:hover { background: #f5f8fc; }
+.workflowActions button:disabled, .workflowFormActions button:disabled { cursor: wait; opacity: .6; }
+.workflowActions .closeTaskButton { border-color: #f0dcdc; color: #9e5559; background: #fffafa; }
+.workflowActions .reopenTaskButton { border-color: #d9eee5; color: #338268; background: #f8fcfa; }
+.workflowEditForm { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: end; gap: 12px; padding: 15px; border: 1px solid #e1e8f1; border-radius: 12px; background: #fff; }
+.workflowEditForm h3 { grid-column: 1 / -1; margin: 0; color: #2c405c; font-size: 13px; }
+.workflowEditForm label { display: grid; gap: 6px; color: #61728a; font-size: 10px; font-weight: 700; }
+.workflowEditForm input, .workflowEditForm textarea { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid #d8e0eb; border-radius: 8px; padding: 9px 10px; color: #263851; background: #fff; font: inherit; font-size: 11px; }
+.workflowFormActions { display: flex; grid-column: 1 / -1; justify-content: flex-end; gap: 7px; }
+.workflowFormActions button[type="submit"] { border-color: #1f3a93; color: #fff; background: #1f3a93; }
 .materialLink { display: inline-block; margin-top: 8px; color: #3475c4; font-size: 11px; text-decoration: none; }
 .deliveryForm { display: grid; grid-column: 1 / -1; grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto; align-items: end; gap: 10px; border-top: 1px solid #e9edf3; padding-top: 14px; }
 .deliveryForm label { display: grid; gap: 6px; color: #74839a; font-size: 11px; font-weight: 600; }
@@ -139,4 +153,4 @@
 .deliveryForm button { border: 0; border-radius: 8px; padding: 10px 14px; color: white; background: #1f3a93; font-size: 12px; font-weight: 700; cursor: pointer; }
 .gradePill { display: inline-grid; place-items: center; min-width: 34px; height: 30px; border-radius: 9px; color: #1b6c56; background: #e1f4ec; font-weight: 800; }
 @media (max-width: 1000px) { .dashboardGrid { grid-template-columns: 1fr; } .quickPanel { grid-column: auto; } }
-@media (max-width: 700px) { .filterBar { flex-wrap: wrap; } .filterBar .formButton { margin-left: 0; } .assignmentRow { grid-template-columns: 1fr; } .assignmentStatus { display: flex; justify-items: start; justify-content: space-between; } .deliveryForm { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .filterBar { flex-wrap: wrap; } .filterBar .formButton { margin-left: 0; } .assignmentRow { grid-template-columns: 1fr; } .assignmentStatus { display: flex; justify-items: start; justify-content: space-between; flex-wrap: wrap; } .deliveryForm, .workflowEditForm { grid-template-columns: 1fr; } }
