@@ -103,6 +103,40 @@ async function actualizarPerfil(req, res, next) {
   } finally { conexion.release(); }
 }
 
+async function cambiarContrasena(req, res, next) {
+  const idUsuario = validarIdUsuario(req.params.id);
+  const actual = typeof req.body.password_actual === "string" ? req.body.password_actual : "";
+  const nueva = typeof req.body.password_nueva === "string" ? req.body.password_nueva : "";
+  if (!idUsuario || !actual || nueva.length < 8 || nueva.length > 255) return res.status(400).json({ error: "Ingresá la contraseña actual y una nueva de entre 8 y 255 caracteres." });
+  if (actual === nueva) return res.status(400).json({ error: "La nueva contraseña debe ser distinta de la actual." });
+  try {
+    const [resultado] = await pool.execute("UPDATE Usuarios_1 SET password = ? WHERE id_usuario = ? AND password = ? AND activo = 1", [nueva, idUsuario, actual]);
+    if (!resultado.affectedRows) {
+      const [cuenta] = await pool.execute("SELECT id_usuario FROM Usuarios_1 WHERE id_usuario = ? AND activo = 1 LIMIT 1", [idUsuario]);
+      if (!cuenta.length) return res.status(404).json({ error: "No se encontró una cuenta activa." });
+      return res.status(400).json({ error: "La contraseña actual no coincide." });
+    }
+    res.json({ ok: true, mensaje: "Contraseña actualizada." });
+  } catch (error) { next(error); }
+}
+
+async function restablecerContrasena(req, res, next) {
+  const idUsuario = validarIdUsuario(req.params.id);
+  const idAdmin = validarIdUsuario(req.body.id_admin);
+  const nueva = typeof req.body.password_nueva === "string" ? req.body.password_nueva : "";
+  if (!idUsuario || !idAdmin || nueva.length < 8 || nueva.length > 255) return res.status(400).json({ error: "Ingresá una nueva contraseña de entre 8 y 255 caracteres." });
+  try {
+    const [admins] = await pool.execute("SELECT 1 FROM Usuarios_1 WHERE id_usuario = ? AND rol = 'ADMIN' AND activo = 1 LIMIT 1", [idAdmin]);
+    if (!admins.length) return res.status(403).json({ error: "Se requiere una cuenta de administrador activa." });
+    const [resultado] = await pool.execute("UPDATE Usuarios_1 SET password = ? WHERE id_usuario = ?", [nueva, idUsuario]);
+    if (!resultado.affectedRows) {
+      const [cuenta] = await pool.execute("SELECT id_usuario FROM Usuarios_1 WHERE id_usuario = ? LIMIT 1", [idUsuario]);
+      if (!cuenta.length) return res.status(404).json({ error: "No se encontró ese usuario." });
+    }
+    res.json({ ok: true, mensaje: "Contraseña restablecida. El usuario ya puede ingresar con la nueva contraseña." });
+  } catch (error) { next(error); }
+}
+
 async function actualizarUsuario(req, res, next) {
   const idUsuario = validarIdUsuario(req.params.id);
   if (!idUsuario) return res.status(400).json({ error: "Usuario inválido." });
@@ -282,6 +316,8 @@ async function cambiarEstadoUsuario(req, res, next) {
 module.exports = {
   obtenerPerfil,
   actualizarPerfil,
+  cambiarContrasena,
+  restablecerContrasena,
   actualizarUsuario,
   listarUsuarios,
   crearUsuario,

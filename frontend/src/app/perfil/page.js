@@ -24,6 +24,8 @@ export default function PerfilPage() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [contrasenas, setContrasenas] = useState({ actual: "", nueva: "", confirmar: "" });
+  const [guardandoContrasena, setGuardandoContrasena] = useState(false);
 
   useEffect(() => {
     let vigente = true;
@@ -93,6 +95,24 @@ export default function PerfilPage() {
     }
   }
 
+  async function cambiarContrasena(event) {
+    event.preventDefault();
+    setError(""); setMensaje("");
+    if (contrasenas.nueva !== contrasenas.confirmar) { setError("La nueva contraseña y su confirmación no coinciden."); return; }
+    setGuardandoContrasena(true);
+    try {
+      const response = await fetch(`${API}/usuarios/${usuario.id_usuario}/password`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password_actual: contrasenas.actual, password_nueva: contrasenas.nueva }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No se pudo cambiar la contraseña.");
+      setContrasenas({ actual: "", nueva: "", confirmar: "" });
+      setMensaje(data.mensaje || "Contraseña actualizada.");
+    } catch (err) { setError(err.message); }
+    finally { setGuardandoContrasena(false); }
+  }
+
   const rol = perfil?.rol || usuario?.rol;
   const nombreRol = rol === "ADMIN" ? "Administrador" : rol === "DOCENTE" ? "Docente" : "Alumno";
   const inicial = (perfil?.username || usuario?.username || "U").slice(0, 1).toUpperCase();
@@ -122,7 +142,16 @@ export default function PerfilPage() {
           <label>Rol en EducaLink<input value={nombreRol} readOnly /></label>
           <label>Cuenta creada<input value={fechaLegible(perfil.fecha_registro)} readOnly /></label>
         </div>
-        <div className={styles.formFooter}><p>La contraseña no se modifica desde esta pantalla.</p><button type="submit" disabled={guardando}>{guardando ? "Guardando…" : "Guardar cambios"}</button></div>
+        <div className={styles.formFooter}><p>La contraseña se administra en el apartado de seguridad.</p><button type="submit" disabled={guardando}>{guardando ? "Guardando…" : "Guardar cambios"}</button></div>
+      </form>}
+      {!cargando && perfil && <form className={styles.passwordCard} onSubmit={cambiarContrasena}>
+        <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>SEGURIDAD</span><h2>Cambiar contraseña</h2><p>Confirmá tu contraseña actual y elegí una nueva de al menos 8 caracteres.</p></div></div>
+        <div className={styles.fields}>
+          <label>Contraseña actual<input type="password" autoComplete="current-password" required value={contrasenas.actual} onChange={(event) => setContrasenas({ ...contrasenas, actual: event.target.value })} /></label>
+          <label>Nueva contraseña<input type="password" autoComplete="new-password" minLength={8} maxLength={255} required value={contrasenas.nueva} onChange={(event) => setContrasenas({ ...contrasenas, nueva: event.target.value })} /></label>
+          <label>Confirmar nueva contraseña<input type="password" autoComplete="new-password" minLength={8} maxLength={255} required value={contrasenas.confirmar} onChange={(event) => setContrasenas({ ...contrasenas, confirmar: event.target.value })} /></label>
+        </div>
+        <div className={styles.formFooter}><span /><button type="submit" disabled={guardandoContrasena}>{guardandoContrasena ? "Actualizando…" : "Actualizar contraseña"}</button></div>
       </form>}
     </div>
   </AcademicLayout>;

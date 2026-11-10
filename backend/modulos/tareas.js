@@ -184,7 +184,7 @@ async function entregarTarea(req, res, next) {
     const estado = pertenece[0].fecha_entrega && new Date(pertenece[0].fecha_entrega) < new Date() ? "TARDE" : "ENTREGADA";
     const [previa] = await pool.execute(`SELECT id_entrega FROM Entregas WHERE id_tarea = ? AND id_alumno = ? LIMIT 1`, [idTarea, idAlumno]);
     if (previa.length) {
-      await pool.execute(`UPDATE Entregas SET archivo = ?, comentario = ?, fecha_entrega = CURRENT_TIMESTAMP, estado = ? WHERE id_entrega = ?`, [archivo || null, comentario || null, estado, previa[0].id_entrega]);
+      await pool.execute(`UPDATE Entregas SET archivo = ?, comentario = ?, devolucion_docente = NULL, fecha_entrega = CURRENT_TIMESTAMP, estado = ? WHERE id_entrega = ?`, [archivo || null, comentario || null, estado, previa[0].id_entrega]);
     } else {
       await pool.execute(`INSERT INTO Entregas (id_tarea, id_alumno, archivo, comentario, estado) VALUES (?, ?, ?, ?, ?)`, [idTarea, idAlumno, archivo || null, comentario || null, estado]);
     }

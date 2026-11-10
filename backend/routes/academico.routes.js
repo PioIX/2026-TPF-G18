@@ -1,6 +1,7 @@
 const express = require("express");
 const {
   listarConfiguracionAcademica,
+  guardarOrientacion,
   crearCurso,
   actualizarCurso,
   guardarMateria,
@@ -12,6 +13,8 @@ const {
 
 const router = express.Router();
 
+router.post("/orientaciones", guardarOrientacion);
+router.patch("/orientaciones/:idOrientacion", guardarOrientacion);
 router.post("/cursos", crearCurso);
 router.patch("/cursos/:idCurso", actualizarCurso);
 router.post("/materias", guardarMateria);
