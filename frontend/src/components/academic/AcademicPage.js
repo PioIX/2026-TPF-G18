@@ -8,7 +8,7 @@ import styles from "./AcademicPage.module.css";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 const RUTAS_POR_ROL = { ALUMNO: "/alumno", DOCENTE: "/docente", ADMIN: "/admin" };
-const ICONOS = { Inicio: "⌂", Materias: "▤", Asistencias: "✓", Calificaciones: "▦", Tareas: "☷", Chat: "◌", Notificaciones: "♧", Perfil: "○" };
+const ICONOS = { Inicio: "⌂", Materias: "▤", "Gestión académica": "▦", Asistencias: "✓", Calificaciones: "▦", Tareas: "☷", Chat: "◌", Notificaciones: "♧", Perfil: "○" };
 
 export function useAcademicUser(rolEsperado) {
   const router = useRouter();

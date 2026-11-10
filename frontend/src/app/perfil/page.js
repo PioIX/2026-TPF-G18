@@ -7,7 +7,7 @@ import styles from "./perfil.module.css";
 const LINKS = {
   ALUMNO: [{ href: "/alumno", label: "Inicio" }, { href: "/alumno/materias", label: "Materias" }, { href: "/alumno/asistencias", label: "Asistencias" }, { href: "/alumno/calificaciones", label: "Calificaciones" }, { href: "/alumno/tareas", label: "Tareas" }, { href: "/chat", label: "Chat" }],
   DOCENTE: [{ href: "/docente", label: "Inicio" }, { href: "/docente/materias", label: "Materias" }, { href: "/docente/asistencias", label: "Asistencias" }, { href: "/docente/calificaciones", label: "Calificaciones" }, { href: "/docente/tareas", label: "Tareas" }, { href: "/chat", label: "Chat" }],
-  ADMIN: [{ href: "/admin", label: "Inicio" }],
+  ADMIN: [{ href: "/admin", label: "Inicio" }, { href: "/admin/academico", label: "Gestión académica" }],
 };
 
 function fechaLegible(valor) {

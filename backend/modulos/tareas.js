@@ -9,7 +9,8 @@ async function listarTareasAlumno(req, res, next) {
       `SELECT t.id_tarea, t.titulo, t.descripcion, t.fecha_publicacion, t.fecha_entrega,
               t.archivo_adjunto, t.estado, m.nombre AS materia, md.id_materia_dictada,
               c.anio, c.division, e.id_entrega, e.archivo AS archivo_entregado,
-              e.comentario AS comentario_entrega, e.fecha_entrega AS fecha_entrega_real, e.estado AS estado_entrega
+              e.comentario AS comentario_entrega, e.devolucion_docente,
+              e.fecha_entrega AS fecha_entrega_real, e.estado AS estado_entrega
        FROM Alumnos al
        JOIN Matriculas ma ON ma.id_alumno = al.id_alumno AND ma.estado = 'ACTIVA'
        JOIN Materias_Dictadas md ON md.id_curso = ma.id_curso
