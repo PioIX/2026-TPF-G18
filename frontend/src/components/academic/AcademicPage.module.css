@@ -134,6 +134,27 @@
 .subjectPill { flex: 0 0 auto; border-radius: 999px; padding: 6px 10px; color: #2d639e; background: #e4f0ff; font-size: 10px; font-weight: 700; }
 .assignmentStatus { display: grid; justify-items: end; gap: 7px; color: #8290a3; font-size: 11px; }
 .assignmentStatus small { max-width: 180px; overflow-wrap: anywhere; text-align: right; }
+.deliveryFeedback { display: grid; justify-items: end; gap: 6px; max-width: 260px; }
+.deliveryFeedback small { max-width: none; }
+.deliveryFeedback p { display: grid; gap: 4px; margin: 4px 0 0; padding: 9px 10px; border: 1px solid #dcebe5; border-radius: 9px; color: #4f7568; background: #f3faf7; font-size: 10px; line-height: 1.45; text-align: right; white-space: pre-wrap; overflow-wrap: anywhere; }
+.deliveryFeedback p strong { color: #34735e; font-size: 10px; }
+.deliveryFeedback p span { color: #647d74; }
+.deliveryReview { display: grid; grid-column: 1 / -1; gap: 11px; padding-top: 14px; border-top: 1px solid #e7edf4; }
+.deliveryReviewHeading h3 { margin: 0; color: #2c405c; font-size: 13px; }
+.deliveryReviewHeading p { margin: 4px 0 0; color: #8996a8; font-size: 10px; }
+.deliveryReviewList { display: grid; gap: 10px; }
+.deliveryReviewCard { display: grid; gap: 10px; padding: 13px; border: 1px solid #e5eaf1; border-radius: 11px; background: #fff; }
+.deliveryStudent { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.deliveryStudent > div { display: grid; gap: 4px; }
+.deliveryStudent strong { color: #344964; font-size: 12px; }
+.deliveryStudent small { color: #8996a8; font-size: 10px; }
+.studentComment { display: grid; gap: 4px; margin: 0; padding: 9px 10px; border-radius: 8px; color: #74839a; background: #f6f8fb; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.studentComment strong { color: #516780; font-size: 10px; }
+.feedbackForm { display: flex; align-items: flex-end; gap: 10px; }
+.feedbackForm label { display: grid; flex: 1; gap: 5px; color: #61728a; font-size: 10px; font-weight: 700; }
+.feedbackForm textarea { width: 100%; box-sizing: border-box; border: 1px solid #d8e0eb; border-radius: 8px; padding: 9px 10px; color: #263851; background: #fff; font: inherit; font-size: 11px; resize: vertical; }
+.feedbackForm button { flex: 0 0 auto; border: 0; border-radius: 8px; padding: 10px 12px; color: #fff; background: #1f3a93; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
+.feedbackForm button:disabled { cursor: wait; opacity: .6; }
 .workflowActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .workflowActions button, .workflowFormActions button { border: 1px solid #dce5f0; border-radius: 8px; padding: 7px 9px; color: #4e6688; background: #fff; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
 .workflowActions button:hover, .workflowFormActions button:hover { background: #f5f8fc; }
@@ -153,4 +174,4 @@
 .deliveryForm button { border: 0; border-radius: 8px; padding: 10px 14px; color: white; background: #1f3a93; font-size: 12px; font-weight: 700; cursor: pointer; }
 .gradePill { display: inline-grid; place-items: center; min-width: 34px; height: 30px; border-radius: 9px; color: #1b6c56; background: #e1f4ec; font-weight: 800; }
 @media (max-width: 1000px) { .dashboardGrid { grid-template-columns: 1fr; } .quickPanel { grid-column: auto; } }
-@media (max-width: 700px) { .filterBar { flex-wrap: wrap; } .filterBar .formButton { margin-left: 0; } .assignmentRow { grid-template-columns: 1fr; } .assignmentStatus { display: flex; justify-items: start; justify-content: space-between; flex-wrap: wrap; } .deliveryForm, .workflowEditForm { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .filterBar { flex-wrap: wrap; } .filterBar .formButton { margin-left: 0; } .assignmentRow { grid-template-columns: 1fr; } .assignmentStatus { display: flex; justify-items: start; justify-content: space-between; flex-wrap: wrap; } .deliveryForm, .workflowEditForm { grid-template-columns: 1fr; } .feedbackForm { align-items: stretch; flex-direction: column; } .feedbackForm button { min-height: 38px; } }

@@ -6,6 +6,7 @@ import styles from "./admin.module.css";
 
 const LINKS_ADMIN = [
   { href: "/admin", label: "Inicio" },
+  { href: "/admin/academico", label: "Gestión académica" },
   { href: "/notificaciones", label: "Notificaciones" },
 ];
 

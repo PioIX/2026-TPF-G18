@@ -16,7 +16,7 @@ const LINKS = {
     { href: "/docente/asistencias", label: "Asistencias" }, { href: "/docente/calificaciones", label: "Calificaciones" },
     { href: "/docente/tareas", label: "Tareas" }, { href: "/chat", label: "Chat" },
   ],
-  ADMIN: [{ href: "/admin", label: "Gestión de usuarios" }],
+  ADMIN: [{ href: "/admin", label: "Inicio" }, { href: "/admin/academico", label: "Gestión académica" }],
 };
 
 const ICONOS = { TAREA: "☷", CALIFICACION: "▦", ASISTENCIA: "✓", CHAT: "◌", AVISO: "♧" };

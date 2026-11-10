@@ -6,9 +6,11 @@ const usuariosRoutes = require("./routes/usuarios.routes");
 const authRoutes = require("./routes/auth.routes");
 const chatRoutes = require("./routes/chats.routes");
 const materiasRoutes = require("./routes/materias.routes");
+const academicoRoutes = require("./routes/academico.routes");
 const asistenciaRoutes = require("./routes/asistencia.routes");
 const calificacionesRoutes = require("./routes/calificaciones.routes");
 const tareasRoutes = require("./routes/tareas.routes");
+const entregasRoutes = require("./routes/entregas.routes");
 const notificacionesRoutes = require("./routes/notificaciones.routes");
 const pool = require("./config/database");
 const attachChatSocket = require("./sockets/chat.socket");
@@ -32,9 +34,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/materias", materiasRoutes);
+app.use("/api/academico", academicoRoutes);
 app.use("/api/asistencias", asistenciaRoutes);
 app.use("/api/calificaciones", calificacionesRoutes);
 app.use("/api/tareas", tareasRoutes);
+app.use("/api/entregas", entregasRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
 
 app.get("/api/health", async (_req, res) => {
