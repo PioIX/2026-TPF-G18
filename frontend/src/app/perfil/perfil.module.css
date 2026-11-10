@@ -1,0 +1,40 @@
+.profilePage { display: grid; gap: 18px; color: #273b55; }
+.identityCard, .formCard { border: 1px solid #e4eaf2; border-radius: 15px; background: #fff; box-shadow: 0 4px 15px #263b5a08; }
+.identityCard { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 22px; background: linear-gradient(110deg,#fff 60%,#f2f6ff); }
+.identityMain { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.avatar { display: grid; flex: 0 0 auto; width: 54px; height: 54px; place-items: center; border-radius: 16px; color: #fff; background: linear-gradient(145deg,#5d83d4,#3158ba); box-shadow: 0 6px 14px #3158ba35; font-size: 21px; font-weight: 800; }
+.eyebrow { color: #7990b0; font-size: 9px; font-weight: 800; letter-spacing: 1.1px; }
+.identityMain h2 { margin: 4px 0; color: #1d3454; font-size: 19px; }
+.identityMain p { margin: 0; color: #7e8ca0; font-size: 11px; overflow-wrap: anywhere; }
+.roleBadge { flex: 0 0 auto; padding: 7px 11px; border-radius: 20px; color: #3e68b8; background: #edf3ff; font-size: 10px; font-weight: 700; }
+.formCard { padding: 22px; }
+.sectionHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; padding-bottom: 17px; border-bottom: 1px solid #edf0f4; }
+.sectionHeading h2 { margin: 5px 0 4px; color: #203650; font-size: 17px; }
+.sectionHeading p { margin: 0; color: #8995a5; font-size: 11px; }
+.accountState { display: inline-flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 10px; white-space: nowrap; }
+.accountState i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.active { color: #36866e; }
+.inactive { color: #9ca5b1; }
+.fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; padding: 20px 0; }
+.fields label { display: grid; gap: 7px; color: #596b81; font-size: 10px; font-weight: 700; }
+.fields input { width: 100%; min-width: 0; height: 39px; padding: 0 11px; border: 1px solid #dfe6ee; border-radius: 8px; outline: none; color: #35475f; background: #fff; font: inherit; font-size: 11px; }
+.fields input:focus { border-color: #6e8fd5; box-shadow: 0 0 0 3px #6e8fd51c; }
+.fields input[readonly] { color: #77869a; background: #f6f8fb; }
+.formFooter { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-top: 15px; border-top: 1px solid #edf0f4; }
+.formFooter p { margin: 0; color: #929eae; font-size: 10px; }
+.formFooter button { min-height: 39px; padding: 0 16px; border: 0; border-radius: 9px; color: #fff; background: #3159c9; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.formFooter button:hover { background: #264bb4; }
+.formFooter button:disabled { cursor: wait; opacity: .65; }
+.error, .success, .loading { margin: 0; padding: 12px 14px; border-radius: 9px; font-size: 12px; }
+.error { color: #9b4045; background: #fff0f0; }
+.success { color: #28785f; background: #edf9f4; }
+.loading { color: #7b899b; background: #fff; text-align: center; }
+
+@media (max-width: 620px) {
+  .identityCard { align-items: flex-start; flex-direction: column; padding: 17px; }
+  .formCard { padding: 17px; }
+  .sectionHeading { flex-direction: column; }
+  .fields { grid-template-columns: 1fr; gap: 13px; padding: 16px 0; }
+  .formFooter { align-items: stretch; flex-direction: column; }
+  .formFooter button { width: 100%; }
+}
