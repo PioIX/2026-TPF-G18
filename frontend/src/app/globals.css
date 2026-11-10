@@ -1,6 +1,56 @@
 html,
 body {
-    width: 100%;
-    min-height: 100%;
-    margin: 0;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+:root {
+  color-scheme: light;
+  --ui-surface: #ffffff;
+  --ui-text: #294464;
+  --ui-border: #dce5f1;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --ui-surface: #17263c;
+  --ui-text: #e0e9f7;
+  --ui-border: #2a3d57;
+}
+body {
+  background: #f3f6fb;
+  color: #17243d;
+  transition: background-color 260ms ease, color 260ms ease;
+}
+html[data-theme="dark"] body {
+  background: #0c1626;
+  color: #e0e9f7;
+}
+button, input, select, textarea {
+  font-family: inherit;
+}
+button, a, input, select, textarea {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
+}
+html[data-theme="dark"] body :is([class*="profilePage"], [class*="dashboard"], [class*="overviewGrid"], [class*="usersPanel"], [class*="identityCard"], [class*="formCard"], [class*="passwordCard"], [class*="statCard"], [class*="welcome"], [class*="panel"], [class*="item"], [class*="toolbar"], [class*="actionCard"], [class*="searchBox"], [class*="modal"]) {
+  color: #dce7f6;
+  background-color: #17263c;
+  border-color: #2a3d57;
+}
+html[data-theme="dark"] body :is(h1, h2, h3, strong, label, td, th) { color: #e7effa; }
+html[data-theme="dark"] body :is(p, small, time, .description) { color: #a9bad0; }
+html[data-theme="dark"] body :is(input, select, textarea) {
+  color: #e0e9f7;
+  background-color: #101b2d;
+  border-color: #354963;
+}
+html[data-theme="dark"] body :is(a, button) { border-color: #354963; }
+html[data-theme="dark"] body :is([class*="table"], [class*="toolbar"]) { border-color: #2a3d57; }
+html[data-theme="dark"] body :is([class*="modal"], [class*="profilePage"]) :is(input, select, textarea) { background-color: #101b2d; }
+html[data-theme="dark"] body :is([class*="empty"], [class*="loading"], [class*="systemNote"]) { color: #a9bad0; background-color: #1b2d45; }
+body :is([class*="actionCard"], [class*="quickLink"], [class*="readButton"], [class*="editButton"]) { transition: transform 180ms ease, box-shadow 180ms ease, background-color 220ms ease, border-color 180ms ease; }
+body :is([class*="actionCard"], [class*="quickLink"]):hover { transform: translateY(-2px); box-shadow: 0 8px 18px #1a3d6617; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

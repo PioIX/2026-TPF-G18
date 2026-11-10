@@ -31,6 +31,28 @@
 .success { color: #28785f; background: #edf9f4; }
 .loading { color: #7b899b; background: #fff; text-align: center; }
 
+:global(html[data-theme="dark"]) .profilePage { color: #dce8f8; }
+:global(html[data-theme="dark"]) .identityCard,
+:global(html[data-theme="dark"]) .formCard,
+:global(html[data-theme="dark"]) .passwordCard { color: #dce8f8; background: #17263c; border-color: #2a3d58; box-shadow: 0 8px 24px #0002; }
+:global(html[data-theme="dark"]) .identityCard { background: linear-gradient(115deg, #17263c, #1d3553); }
+:global(html[data-theme="dark"]) .identityMain h2,
+:global(html[data-theme="dark"]) .sectionHeading h2 { color: #f0f5ff; }
+:global(html[data-theme="dark"]) .identityMain p,
+:global(html[data-theme="dark"]) .sectionHeading p,
+:global(html[data-theme="dark"]) .formFooter p { color: #a8bbd5; }
+:global(html[data-theme="dark"]) .fields label { color: #c4d3e7; }
+:global(html[data-theme="dark"]) .fields input { color: #e5efff; background: #101b2d; border-color: #354963; }
+:global(html[data-theme="dark"]) .fields input[readonly] { color: #a8bad3; background: #1c2e47; }
+:global(html[data-theme="dark"]) .roleBadge { color: #c8dcff; background: #294a72; }
+:global(html[data-theme="dark"]) .sectionHeading,
+:global(html[data-theme="dark"]) .formFooter { border-color: #2d415c; }
+:global(html[data-theme="dark"]) .loading { color: #b6c7dc; background: #17263c; }
+:global(html[data-theme="dark"]) .error { color: #ffc4c6; background: #3c242e; }
+:global(html[data-theme="dark"]) .success { color: #b5f0d7; background: #18392f; }
+.identityCard, .formCard, .passwordCard, .fields input, .formFooter button { transition: color 240ms ease, background-color 240ms ease, border-color 240ms ease, box-shadow 240ms ease; }
+.formFooter button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 7px 18px #3159c93b; }
+
 @media (max-width: 620px) {
   .identityCard { align-items: flex-start; flex-direction: column; padding: 17px; }
   .formCard, .passwordCard { padding: 17px; }
