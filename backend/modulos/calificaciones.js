@@ -77,4 +77,37 @@ async function crearCalificacion(req, res, next) {
   } catch (error) { next(error); }
 }
 
-module.exports = { listarCalificacionesAlumno, listarCalificacionesDocente, crearCalificacion };
+async function actualizarCalificacion(req, res, next) {
+  const idUsuario = Number(req.body.id_usuario);
+  const idCalificacion = Number(req.params.idCalificacion);
+  const nota = Number(req.body.nota);
+  const { tipo, fecha } = req.body;
+  const descripcion = typeof req.body.descripcion === "string" ? req.body.descripcion.trim() : "";
+  if (!Number.isInteger(idUsuario) || idUsuario <= 0 || !Number.isInteger(idCalificacion) || idCalificacion <= 0 || !TIPOS.includes(tipo) || !Number.isFinite(nota) || nota < 0 || nota > 10 || !/^\d{4}-\d{2}-\d{2}$/.test(String(fecha || "")) || descripcion.length > 150) {
+    return res.status(400).json({ error: "Revisá tipo, nota (0 a 10), fecha y descripción." });
+  }
+  try {
+    const [asignadas] = await pool.execute(
+      `SELECT ca.id_calificacion, ca.id_alumno, ca.id_materia_dictada, al.id_usuario
+       FROM Calificaciones ca
+       JOIN Alumnos al ON al.id_alumno = ca.id_alumno
+       JOIN Dictados_Docentes dd ON dd.id_materia_dictada = ca.id_materia_dictada
+       JOIN Docentes d ON d.id_docente = dd.id_docente
+       WHERE ca.id_calificacion = ? AND d.id_usuario = ? LIMIT 1`,
+      [idCalificacion, idUsuario]
+    );
+    if (!asignadas.length) return res.status(403).json({ error: "No podés corregir esta calificación." });
+    await pool.execute(
+      "UPDATE Calificaciones SET tipo = ?, descripcion = ?, nota = ?, fecha = ? WHERE id_calificacion = ?",
+      [tipo, descripcion || null, nota, fecha, idCalificacion]
+    );
+    await crearNotificaciones([asignadas[0].id_usuario], {
+      titulo: "Calificación corregida",
+      mensaje: `${tipo}: ${nota}${descripcion ? ` · ${descripcion}` : ""}`,
+      tipo: "CALIFICACION",
+    }, req.app.get("io"));
+    res.json({ ok: true, mensaje: "Calificación corregida." });
+  } catch (error) { next(error); }
+}
+
+module.exports = { listarCalificacionesAlumno, listarCalificacionesDocente, crearCalificacion, actualizarCalificacion };

@@ -83,6 +83,87 @@ async function crearTarea(req, res, next) {
   } catch (error) { next(error); }
 }
 
+async function obtenerTareaDocente(idUsuario, idTarea) {
+  const [tareas] = await pool.execute(
+    `SELECT t.id_tarea, t.id_materia_dictada, t.titulo, t.estado, m.nombre AS materia
+     FROM Tareas t
+     JOIN Docentes d ON d.id_docente = t.id_docente
+     JOIN Materias_Dictadas md ON md.id_materia_dictada = t.id_materia_dictada
+     JOIN Materias m ON m.id_materia = md.id_materia
+     WHERE t.id_tarea = ? AND d.id_usuario = ? LIMIT 1`,
+    [idTarea, idUsuario]
+  );
+  return tareas[0] || null;
+}
+
+async function notificarAlumnosDeTarea(idMateriaDictada, titulo, mensaje, io) {
+  const [alumnos] = await pool.execute(
+    `SELECT DISTINCT al.id_usuario
+     FROM Materias_Dictadas md
+     JOIN Matriculas ma ON ma.id_curso = md.id_curso AND ma.estado = 'ACTIVA'
+     JOIN Alumnos al ON al.id_alumno = ma.id_alumno
+     WHERE md.id_materia_dictada = ?`,
+    [idMateriaDictada]
+  );
+  await crearNotificaciones(alumnos.map((alumno) => alumno.id_usuario), { titulo, mensaje, tipo: "TAREA" }, io);
+}
+
+function convertirFechaEntrega(valor) {
+  if (valor === null || valor === undefined || valor === "") return null;
+  if (typeof valor !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(valor)) return undefined;
+  return valor.replace("T", " ").length === 16 ? `${valor.replace("T", " ")}:00` : valor.replace("T", " ");
+}
+
+async function actualizarTarea(req, res, next) {
+  const idUsuario = Number(req.body.id_usuario);
+  const idTarea = Number(req.params.idTarea);
+  const titulo = typeof req.body.titulo === "string" ? req.body.titulo.trim() : "";
+  const descripcion = typeof req.body.descripcion === "string" ? req.body.descripcion.trim() : "";
+  const archivo = typeof req.body.archivo_adjunto === "string" ? req.body.archivo_adjunto.trim() : "";
+  const fechaEntrega = convertirFechaEntrega(req.body.fecha_entrega);
+  if (![idUsuario, idTarea].every((id) => Number.isInteger(id) && id > 0) || !titulo || titulo.length > 150 || descripcion.length > 65535 || archivo.length > 255 || fechaEntrega === undefined) {
+    return res.status(400).json({ error: "Revisá el título, el material y la fecha límite." });
+  }
+  try {
+    const tarea = await obtenerTareaDocente(idUsuario, idTarea);
+    if (!tarea) return res.status(403).json({ error: "No podés editar esta tarea." });
+    await pool.execute(
+      "UPDATE Tareas SET titulo = ?, descripcion = ?, fecha_entrega = ?, archivo_adjunto = ? WHERE id_tarea = ?",
+      [titulo, descripcion || null, fechaEntrega, archivo || null, idTarea]
+    );
+    await notificarAlumnosDeTarea(
+      tarea.id_materia_dictada,
+      "Tarea actualizada",
+      `${titulo} · ${tarea.materia}`,
+      req.app.get("io")
+    );
+    res.json({ ok: true, mensaje: "Tarea actualizada." });
+  } catch (error) { next(error); }
+}
+
+async function cambiarEstadoTarea(req, res, next) {
+  const idUsuario = Number(req.body.id_usuario);
+  const idTarea = Number(req.params.idTarea);
+  const estado = req.body.estado;
+  if (![idUsuario, idTarea].every((id) => Number.isInteger(id) && id > 0) || !["ACTIVA", "CERRADA"].includes(estado)) {
+    return res.status(400).json({ error: "El estado de la tarea no es válido." });
+  }
+  try {
+    const tarea = await obtenerTareaDocente(idUsuario, idTarea);
+    if (!tarea) return res.status(403).json({ error: "No podés cambiar esta tarea." });
+    await pool.execute("UPDATE Tareas SET estado = ? WHERE id_tarea = ?", [estado, idTarea]);
+    if (tarea.estado !== estado) {
+      await notificarAlumnosDeTarea(
+        tarea.id_materia_dictada,
+        estado === "CERRADA" ? "Tarea cerrada" : "Tarea reabierta",
+        `${tarea.titulo} · ${tarea.materia}`,
+        req.app.get("io")
+      );
+    }
+    res.json({ ok: true, estado, mensaje: estado === "CERRADA" ? "Tarea cerrada." : "Tarea reabierta." });
+  } catch (error) { next(error); }
+}
+
 async function entregarTarea(req, res, next) {
   const idUsuario = Number(req.body.id_usuario);
   const idTarea = Number(req.params.idTarea);
@@ -118,4 +199,4 @@ async function entregarTarea(req, res, next) {
   } catch (error) { next(error); }
 }
 
-module.exports = { listarTareasAlumno, listarTareasDocente, crearTarea, entregarTarea };
+module.exports = { listarTareasAlumno, listarTareasDocente, crearTarea, actualizarTarea, cambiarEstadoTarea, entregarTarea };
