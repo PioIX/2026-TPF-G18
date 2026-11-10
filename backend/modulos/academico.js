@@ -19,12 +19,39 @@ function responderDuplicado(res, error, mensaje) {
   return true;
 }
 
+async function guardarOrientacion(req, res, next) {
+  const idAdmin = idValido(req.body.id_admin);
+  const idColegio = idValido(req.body.id_colegio);
+  const idOrientacion = req.params.idOrientacion ? idValido(req.params.idOrientacion) : null;
+  const nombre = typeof req.body.nombre === "string" ? req.body.nombre.trim() : "";
+  const descripcion = typeof req.body.descripcion === "string" ? req.body.descripcion.trim() : "";
+  if (!idAdmin || !idColegio || (req.params.idOrientacion && !idOrientacion) || !nombre || nombre.length > 100 || descripcion.length > 200) return res.status(400).json({ error: "Completá el colegio, el nombre y una descripción de hasta 200 caracteres." });
+  try {
+    if (!await esAdmin(idAdmin)) return res.status(403).json({ error: "Se requiere una cuenta de administrador activa." });
+    if (idOrientacion) {
+      const [resultado] = await pool.execute("UPDATE Orientaciones SET id_colegio = ?, nombre = ?, descripcion = ? WHERE id_orientacion = ?", [idColegio, nombre, descripcion || null, idOrientacion]);
+      if (!resultado.affectedRows) {
+        const [existentes] = await pool.execute("SELECT 1 FROM Orientaciones WHERE id_orientacion = ?", [idOrientacion]);
+        if (!existentes.length) return res.status(404).json({ error: "No se encontró esa orientación." });
+      }
+      return res.json({ ok: true, mensaje: "Orientación actualizada." });
+    }
+    const [resultado] = await pool.execute("INSERT INTO Orientaciones (id_colegio, nombre, descripcion) VALUES (?, ?, ?)", [idColegio, nombre, descripcion || null]);
+    res.status(201).json({ ok: true, id_orientacion: resultado.insertId, mensaje: "Orientación creada." });
+  } catch (error) {
+    if (responderDuplicado(res, error, "Ya existe esa orientación para el colegio seleccionado.")) return;
+    if (error.code === "ER_NO_REFERENCED_ROW_2") return res.status(400).json({ error: "El colegio seleccionado no existe." });
+    next(error);
+  }
+}
+
 async function listarConfiguracionAcademica(req, res, next) {
   const idAdmin = idValido(req.params.idAdmin);
   if (!idAdmin) return res.status(400).json({ error: "Administrador inválido." });
   try {
     if (!await esAdmin(idAdmin)) return res.status(403).json({ error: "Se requiere una cuenta de administrador activa." });
-    const [orientaciones] = await pool.execute("SELECT id_orientacion, nombre FROM Orientaciones ORDER BY nombre");
+    const [colegios] = await pool.execute("SELECT id_colegio, nombre FROM Colegios WHERE activo = 1 ORDER BY nombre");
+    const [orientaciones] = await pool.execute("SELECT o.id_orientacion, o.id_colegio, o.nombre, o.descripcion, c.nombre AS colegio FROM Orientaciones o JOIN Colegios c ON c.id_colegio = o.id_colegio ORDER BY c.nombre, o.nombre");
     const [cursos] = await pool.execute(
       `SELECT c.id_curso, c.id_orientacion, c.anio, c.division, c.ciclo_lectivo,
               o.nombre AS orientacion,
@@ -74,7 +101,7 @@ async function listarConfiguracionAcademica(req, res, next) {
        WHERE ma.estado = 'ACTIVA'
        ORDER BY c.ciclo_lectivo DESC, c.anio, c.division, a.apellido, a.nombre`
     );
-    res.json({ orientaciones, cursos, materias, materiasDictadas, docentes, alumnos, matriculas });
+    res.json({ colegios, orientaciones, cursos, materias, materiasDictadas, docentes, alumnos, matriculas });
   } catch (error) { next(error); }
 }
 
@@ -247,4 +274,4 @@ async function cambiarEstadoMatricula(req, res, next) {
   } catch (error) { next(error); }
 }
 
-module.exports = { listarConfiguracionAcademica, crearCurso, actualizarCurso, guardarMateria, crearMateriaDictada, asignarDocente, matricularAlumno, cambiarEstadoMatricula };
+module.exports = { listarConfiguracionAcademica, guardarOrientacion, crearCurso, actualizarCurso, guardarMateria, crearMateriaDictada, asignarDocente, matricularAlumno, cambiarEstadoMatricula };

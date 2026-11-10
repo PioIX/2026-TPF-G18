@@ -11,6 +11,7 @@ const LINKS_ADMIN = [
 
 const CURSO_VACIO = () => ({ id_curso: "", id_orientacion: "", anio: "", division: "", ciclo_lectivo: String(new Date().getFullYear()) });
 const MATERIA_VACIA = { id_materia: "", nombre: "", descripcion: "" };
+const ORIENTACION_VACIA = { id_orientacion: "", id_colegio: "", nombre: "", descripcion: "" };
 const DICTADO_VACIO = { id_curso: "", id_materia: "", horas_semanales: "" };
 const DOCENTE_VACIO = { id_materia_dictada: "", id_docente: "", rol: "Titular" };
 const MATRICULA_VACIA = { id_alumno: "", id_curso: "" };
@@ -36,6 +37,7 @@ export default function GestionAcademicaPage() {
   const [catalogo, setCatalogo] = useState({ orientaciones: [], cursos: [], materias: [], materiasDictadas: [], docentes: [], alumnos: [], matriculas: [] });
   const [curso, setCurso] = useState(CURSO_VACIO);
   const [materia, setMateria] = useState(MATERIA_VACIA);
+  const [orientacion, setOrientacion] = useState(ORIENTACION_VACIA);
   const [dictado, setDictado] = useState(DICTADO_VACIO);
   const [docente, setDocente] = useState(DOCENTE_VACIO);
   const [matricula, setMatricula] = useState(MATRICULA_VACIA);
@@ -83,7 +85,7 @@ export default function GestionAcademicaPage() {
   return <AcademicLayout title="Gestión académica" description="Organizá cursos, materias, docentes y matrículas." usuario={usuario} links={LINKS_ADMIN}>
     <div className={styles.page}>
       <nav className={styles.tabs} aria-label="Gestión académica">
-        {[ ["cursos", "Cursos y materias"], ["dictados", "Materias y docentes"], ["matriculas", "Matrículas"] ].map(([id, nombre]) => <button type="button" key={id} className={seccion === id ? styles.tabActive : ""} onClick={() => setSeccion(id)}>{nombre}</button>)}
+        {[ ["cursos", "Cursos y materias"], ["orientaciones", "Orientaciones"], ["dictados", "Materias y docentes"], ["matriculas", "Matrículas"] ].map(([id, nombre]) => <button type="button" key={id} className={seccion === id ? styles.tabActive : ""} onClick={() => setSeccion(id)}>{nombre}</button>)}
       </nav>
 
       {error && <p className={styles.error} role="alert">{error}</p>}
@@ -119,6 +121,19 @@ export default function GestionAcademicaPage() {
           <div className={styles.panelHeading}><div><span className={styles.overline}>CATÁLOGO</span><h2>Materias existentes</h2></div><span className={styles.countPill}>{catalogo.materias.length} materias</span></div>
           {catalogo.materias.length === 0 ? <p className={styles.empty}>Todavía no hay materias cargadas.</p> : <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Nombre</th><th>Descripción</th><th>Acción</th></tr></thead><tbody>{catalogo.materias.map((item) => <tr key={item.id_materia}><td><strong>{item.nombre}</strong></td><td>{item.descripcion || "—"}</td><td><button type="button" className={styles.textButton} onClick={() => { setMateria({ id_materia: item.id_materia, nombre: item.nombre, descripcion: item.descripcion || "" }); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Editar materia</button></td></tr>)}</tbody></table></div>}
         </section>
+      </>}
+
+      {seccion === "orientaciones" && <>
+        <form className={styles.panel} onSubmit={(event) => guardar(event, orientacion.id_orientacion ? `/academico/orientaciones/${orientacion.id_orientacion}` : "/academico/orientaciones", orientacion.id_orientacion ? "PATCH" : "POST", orientacion, () => setOrientacion(ORIENTACION_VACIA))}>
+          <div className={styles.panelHeading}><div><span className={styles.overline}>{orientacion.id_orientacion ? "MODIFICAR" : "CATÁLOGO"}</span><h2>{orientacion.id_orientacion ? "Editar orientación" : "Crear orientación"}</h2></div></div>
+          <div className={styles.fields}>
+            <label>Colegio<select value={orientacion.id_colegio} onChange={(event) => setOrientacion({ ...orientacion, id_colegio: event.target.value })} required><option value="">Elegí un colegio</option>{catalogo.colegios?.map((item) => <option key={item.id_colegio} value={item.id_colegio}>{item.nombre}</option>)}</select></label>
+            <label>Nombre<input maxLength="100" value={orientacion.nombre} onChange={(event) => setOrientacion({ ...orientacion, nombre: event.target.value })} required /></label>
+            <label className={styles.fullField}>Descripción<input maxLength="200" value={orientacion.descripcion} onChange={(event) => setOrientacion({ ...orientacion, descripcion: event.target.value })} /></label>
+          </div>
+          <div className={styles.formActions}>{orientacion.id_orientacion && <button type="button" className={styles.secondaryButton} onClick={() => setOrientacion(ORIENTACION_VACIA)}>Cancelar</button>}<button className={styles.primaryButton} type="submit" disabled={guardando || !catalogo.colegios?.length}>{guardando ? "Guardando…" : orientacion.id_orientacion ? "Guardar cambios" : "Crear orientación"}</button></div>
+        </form>
+        <section className={styles.panel}><div className={styles.panelHeading}><div><span className={styles.overline}>CATÁLOGO</span><h2>Orientaciones existentes</h2></div><span className={styles.countPill}>{catalogo.orientaciones.length} orientaciones</span></div>{!catalogo.orientaciones.length ? <p className={styles.empty}>Todavía no hay orientaciones cargadas.</p> : <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Colegio</th><th>Orientación</th><th>Descripción</th><th>Acción</th></tr></thead><tbody>{catalogo.orientaciones.map((item) => <tr key={item.id_orientacion}><td>{item.colegio}</td><td><strong>{item.nombre}</strong></td><td>{item.descripcion || "—"}</td><td><button type="button" className={styles.textButton} onClick={() => { setOrientacion({ id_orientacion: item.id_orientacion, id_colegio: String(item.id_colegio), nombre: item.nombre, descripcion: item.descripcion || "" }); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Editar</button></td></tr>)}</tbody></table></div>}</section>
       </>}
 
       {seccion === "dictados" && <>

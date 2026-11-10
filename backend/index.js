@@ -11,6 +11,8 @@ const asistenciaRoutes = require("./routes/asistencia.routes");
 const calificacionesRoutes = require("./routes/calificaciones.routes");
 const tareasRoutes = require("./routes/tareas.routes");
 const entregasRoutes = require("./routes/entregas.routes");
+const archivosRoutes = require("./routes/archivos.routes");
+const { CARPETA_ARCHIVOS } = require("./modulos/archivos");
 const notificacionesRoutes = require("./routes/notificaciones.routes");
 const pool = require("./config/database");
 const attachChatSocket = require("./sockets/chat.socket");
@@ -39,6 +41,8 @@ app.use("/api/asistencias", asistenciaRoutes);
 app.use("/api/calificaciones", calificacionesRoutes);
 app.use("/api/tareas", tareasRoutes);
 app.use("/api/entregas", entregasRoutes);
+app.use("/api/archivos", archivosRoutes);
+app.use("/uploads", express.static(CARPETA_ARCHIVOS, { dotfiles: "deny", index: false }));
 app.use("/api/notificaciones", notificacionesRoutes);
 
 app.get("/api/health", async (_req, res) => {
@@ -54,7 +58,8 @@ attachChatSocket(io, pool);
 
 app.use((error, _req, res, _next) => {
   console.error("Error no controlado:", error.code || error.message);
-  res.status(500).json({ error: "Error interno del servidor." });
+  const status = Number(error.status) || 500;
+  res.status(status).json({ error: status === 413 ? "El archivo supera el límite de 10 MB." : status < 500 ? error.message : "Error interno del servidor." });
 });
 
 const port = Number(process.env.PORT) || 4000;

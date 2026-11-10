@@ -22,6 +22,9 @@ export default function AdminPage() {
   const [filtroRol, setFiltroRol] = useState("TODOS");
   const [mostrarTodos, setMostrarTodos] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [usuarioPassword, setUsuarioPassword] = useState(null);
+  const [nuevaContrasena, setNuevaContrasena] = useState("");
+  const [confirmarContrasena, setConfirmarContrasena] = useState("");
   const [usuarioEditando, setUsuarioEditando] = useState(null);
   const [rolNuevo, setRolNuevo] = useState("ALUMNO");
   const [formulario, setFormulario] = useState(FORMULARIO_VACIO);
@@ -159,6 +162,24 @@ export default function AdminPage() {
     }
   }
 
+  async function restablecerContrasena(event) {
+    event.preventDefault();
+    setError(""); setMensaje("");
+    if (nuevaContrasena !== confirmarContrasena) { setError("La contraseña y su confirmación no coinciden."); return; }
+    setGuardando(true);
+    try {
+      const respuesta = await fetch(`${API}/usuarios/${usuarioPassword.id_usuario}/password/reset`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_admin: usuario.id_usuario, password_nueva: nuevaContrasena }),
+      });
+      const datos = await respuesta.json();
+      if (!respuesta.ok) throw new Error(datos.error || "No se pudo restablecer la contraseña.");
+      setMensaje(datos.mensaje || "Contraseña restablecida.");
+      setUsuarioPassword(null); setNuevaContrasena(""); setConfirmarContrasena("");
+    } catch (err) { setError(err.message); }
+    finally { setGuardando(false); }
+  }
+
   if (!usuario) return null;
 
   return (
@@ -206,7 +227,7 @@ export default function AdminPage() {
           </form>
           {cargando ? <div className={styles.emptyState}>Cargando usuarios…</div> : usuarios.length === 0 ? <div className={styles.emptyState}>No se encontraron usuarios con esos datos.</div> : filasVisibles.filter((item) => filtroRol === "TODOS" || item.rol === filtroRol).length === 0 ? <div className={styles.emptyState}>No hay cuentas con ese rol.</div> : (
             <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Usuario</th><th>Correo electrónico</th><th>Rol</th><th>Estado</th><th><span className={styles.srOnly}>Acciones</span></th></tr></thead><tbody>
-              {filasVisibles.filter((item) => filtroRol === "TODOS" || item.rol === filtroRol).map((persona) => <tr key={persona.id_usuario}><td><div className={styles.personCell}><span className={styles.personAvatar}>{(persona.username || persona.mail || "U").slice(0, 1).toUpperCase()}</span><span><strong>{[persona.nombre, persona.apellido].filter(Boolean).join(" ") || persona.username}</strong><small>@{persona.username}</small></span></div></td><td className={styles.emailCell}>{persona.mail}</td><td><span className={`${styles.roleBadge} ${styles[`role${persona.rol}`] || ""}`}>{persona.rol === "ALUMNO" ? "Alumno" : persona.rol === "DOCENTE" ? "Docente" : "Administrador"}</span></td><td><span className={`${styles.status} ${Number(persona.activo) ? styles.active : styles.inactive}`}><i />{Number(persona.activo) ? "Activo" : "Inactivo"}</span></td><td className={styles.actionCell}><div className={styles.rowActions}><button type="button" className={styles.editButton} onClick={() => abrirEdicion(persona)}>Editar</button><button type="button" className={Number(persona.activo) ? styles.disableButton : styles.enableButton} onClick={() => cambiarEstado(persona)}>{Number(persona.activo) ? "Desactivar" : "Activar"}</button></div></td></tr>)}
+              {filasVisibles.filter((item) => filtroRol === "TODOS" || item.rol === filtroRol).map((persona) => <tr key={persona.id_usuario}><td><div className={styles.personCell}><span className={styles.personAvatar}>{(persona.username || persona.mail || "U").slice(0, 1).toUpperCase()}</span><span><strong>{[persona.nombre, persona.apellido].filter(Boolean).join(" ") || persona.username}</strong><small>@{persona.username}</small></span></div></td><td className={styles.emailCell}>{persona.mail}</td><td><span className={`${styles.roleBadge} ${styles[`role${persona.rol}`] || ""}`}>{persona.rol === "ALUMNO" ? "Alumno" : persona.rol === "DOCENTE" ? "Docente" : "Administrador"}</span></td><td><span className={`${styles.status} ${Number(persona.activo) ? styles.active : styles.inactive}`}><i />{Number(persona.activo) ? "Activo" : "Inactivo"}</span></td><td className={styles.actionCell}><div className={styles.rowActions}><button type="button" className={styles.editButton} onClick={() => abrirEdicion(persona)}>Editar</button><button type="button" className={styles.editButton} onClick={() => { setError(""); setNuevaContrasena(""); setConfirmarContrasena(""); setUsuarioPassword(persona); }}>Restablecer contraseña</button><button type="button" className={Number(persona.activo) ? styles.disableButton : styles.enableButton} onClick={() => cambiarEstado(persona)}>{Number(persona.activo) ? "Desactivar" : "Activar"}</button></div></td></tr>)}
             </tbody></table></div>
           )}
           {!cargando && conteos.total > 8 && filtroRol === "TODOS" && <button type="button" className={styles.showMore} onClick={() => setMostrarTodos((actual) => !actual)}>{mostrarTodos ? "Mostrar menos" : `Ver todos (${conteos.total})`}</button>}
@@ -227,6 +248,7 @@ export default function AdminPage() {
           <div className={styles.modalActions}><button type="button" className={styles.cancelButton} onClick={() => setModalAbierto(false)}>Cancelar</button><button type="submit" className={styles.primaryButton} disabled={guardando}>{guardando ? "Guardando…" : usuarioEditando ? "Guardar cambios" : "Crear cuenta"}</button></div>
         </form>
       </section></div>}
+      {usuarioPassword && <div className={styles.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setUsuarioPassword(null); }}><section className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="password-title"><header className={styles.modalHeader}><div><span className={styles.overline}>RESTABLECER ACCESO</span><h2 id="password-title">Nueva contraseña</h2><p>Cuenta: @{usuarioPassword.username}. Compartí la contraseña nueva directamente con su titular.</p></div><button type="button" className={styles.closeButton} onClick={() => setUsuarioPassword(null)} aria-label="Cerrar">×</button></header><form className={styles.createForm} onSubmit={restablecerContrasena}><label>Nueva contraseña<input type="password" minLength={8} maxLength={255} autoComplete="new-password" required value={nuevaContrasena} onChange={(event) => setNuevaContrasena(event.target.value)} /></label><label>Confirmar contraseña<input type="password" minLength={8} maxLength={255} autoComplete="new-password" required value={confirmarContrasena} onChange={(event) => setConfirmarContrasena(event.target.value)} /></label>{error && <p className={styles.alertError} role="alert">{error}</p>}<div className={styles.modalActions}><button type="button" className={styles.cancelButton} onClick={() => setUsuarioPassword(null)}>Cancelar</button><button type="submit" className={styles.primaryButton} disabled={guardando}>{guardando ? "Restableciendo…" : "Restablecer contraseña"}</button></div></form></section></div>}
     </AcademicLayout>
   );
 }
