@@ -14,6 +14,7 @@
     "react": "^18",
     "react-dom": "^18",
     "reactjs-popup": "^2.0.6",
+    "read-excel-file": "^9.3.14",
     "socket.io-client": "^4.7.4"
   }
 }

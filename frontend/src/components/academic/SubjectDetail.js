@@ -97,8 +97,9 @@ export default function SubjectDetail() {
           {tareas.length ? <div className={styles.taskGrid}>{tareas.map((item) => <article className={styles.task} key={item.id_tarea}>
             <div className={styles.taskHeading}><div><strong>{item.titulo}</strong><span>Publicada {fecha(item.fecha_publicacion)} · Vence {fecha(item.fecha_entrega)}</span></div><span className={`${styles.status} ${item.id_entrega ? styles.statusENTREGADA : styles.statusPENDIENTE}`}>{item.estado_entrega || (item.id_entrega ? "ENTREGADA" : "PENDIENTE")}</span></div>
             {item.descripcion && <p>{item.descripcion}</p>}
-            {item.archivo_adjunto && <a className={styles.fileLink} href={item.archivo_adjunto} target="_blank" rel="noreferrer">Abrir material adjunto ↗</a>}
-            {item.id_entrega && <div className={styles.delivery}><strong>Tu entrega</strong>{item.archivo_entregado && <a href={item.archivo_entregado} target="_blank" rel="noreferrer">Ver archivo entregado ↗</a>}<span>{item.comentario_entrega || "Sin comentario"}</span>{item.devolucion_docente && <p><b>Devolución docente:</b> {item.devolucion_docente}</p>}</div>}
+            {item.archivo_adjunto && <a className={styles.fileLink} href={item.archivo_adjunto} target="_blank" rel="noreferrer">Abrir enlace al material ↗</a>}
+            {(item.archivos_adjunto || []).map((archivo) => <a className={styles.fileLink} href={archivo.url} target="_blank" rel="noreferrer" key={archivo.url}>{archivo.nombre} ↗</a>)}
+            {item.id_entrega && <div className={styles.delivery}><strong>Tu entrega</strong>{item.archivo_entregado && <a href={item.archivo_entregado} target="_blank" rel="noreferrer">Ver enlace enviado ↗</a>}{(item.archivos_entregados || []).map((archivo) => <a href={archivo.url} target="_blank" rel="noreferrer" key={archivo.url}>{archivo.nombre} ↗</a>)}<span>{item.comentario_entrega || "Sin comentario"}</span>{item.devolucion_docente && <p><b>Devolución docente:</b> {item.devolucion_docente}</p>}</div>}
           </article>)}</div> : <p className={styles.empty}>No hay tareas para esta materia.</p>}
         </section>
       </>}

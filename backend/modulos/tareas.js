@@ -1,5 +1,18 @@
 const pool = require("../config/database");
 const { crearNotificaciones } = require("./notificaciones");
+const { validarAdjuntos, adjuntosPorTarea, adjuntosPorEntrega, guardarAdjuntosTarea, guardarAdjuntosEntrega } = require("./adjuntos");
+
+async function incluirAdjuntosTareas(tareas) {
+  const [adjuntos, entregas] = await Promise.all([
+    adjuntosPorTarea(tareas.map((tarea) => tarea.id_tarea)),
+    adjuntosPorEntrega(tareas.map((tarea) => tarea.id_entrega).filter(Boolean)),
+  ]);
+  return tareas.map((tarea) => ({
+    ...tarea,
+    archivos_adjunto: adjuntos.get(Number(tarea.id_tarea)) || [],
+    archivos_entregados: entregas.get(Number(tarea.id_entrega)) || [],
+  }));
+}
 
 async function listarTareasAlumno(req, res, next) {
   const idUsuario = Number(req.params.idUsuario);
@@ -21,7 +34,7 @@ async function listarTareasAlumno(req, res, next) {
        WHERE al.id_usuario = ?
        ORDER BY t.fecha_entrega IS NULL, t.fecha_entrega, t.fecha_publicacion DESC`, [idUsuario]
     );
-    res.json({ tareas });
+    res.json({ tareas: await incluirAdjuntosTareas(tareas) });
   } catch (error) {
     // La migración de la devolución docente puede no estar aplicada todavía.
     // En ese caso las tareas igual se deben poder consultar y mostrar.
@@ -43,7 +56,7 @@ async function listarTareasAlumno(req, res, next) {
          WHERE al.id_usuario = ?
          ORDER BY t.fecha_entrega IS NULL, t.fecha_entrega, t.fecha_publicacion DESC`, [idUsuario]
       );
-      res.json({ tareas });
+      res.json({ tareas: await incluirAdjuntosTareas(tareas) });
     } catch (errorAlternativo) { next(errorAlternativo); }
   }
 }
@@ -65,7 +78,7 @@ async function listarTareasDocente(req, res, next) {
        WHERE d.id_usuario = ?
        ORDER BY t.fecha_publicacion DESC`, [idUsuario]
     );
-    res.json({ tareas });
+    res.json({ tareas: await incluirAdjuntosTareas(tareas) });
   } catch (error) { next(error); }
 }
 
@@ -75,21 +88,36 @@ async function crearTarea(req, res, next) {
   const titulo = typeof req.body.titulo === "string" ? req.body.titulo.trim() : "";
   const descripcion = typeof req.body.descripcion === "string" ? req.body.descripcion.trim() : "";
   const archivo = typeof req.body.archivo_adjunto === "string" ? req.body.archivo_adjunto.trim() : "";
+  const adjuntos = validarAdjuntos(req.body.archivos_adjunto);
   const fechaEntrega = typeof req.body.fecha_entrega === "string" && req.body.fecha_entrega.trim()
     ? req.body.fecha_entrega.trim().replace("T", " ").replace(/(\d{2}:\d{2})$/, "$1:00")
     : null;
   if (![idUsuario, idMateriaDictada].every((id) => Number.isInteger(id) && id > 0) || !titulo) return res.status(400).json({ error: "Completá materia y título." });
+  if (!adjuntos.ok) return res.status(400).json({ error: adjuntos.error });
   try {
-    const [docentes] = await pool.execute(
+    const db = await pool.getConnection();
+    let resultado;
+    try {
+      await db.beginTransaction();
+      const [docentes] = await db.execute(
       `SELECT d.id_docente FROM Docentes d JOIN Dictados_Docentes dd ON dd.id_docente = d.id_docente
        WHERE d.id_usuario = ? AND dd.id_materia_dictada = ? LIMIT 1`, [idUsuario, idMateriaDictada]
-    );
-    if (!docentes.length) return res.status(403).json({ error: "El docente no está asignado a esa materia." });
-    const [resultado] = await pool.execute(
-      `INSERT INTO Tareas (id_materia_dictada, id_docente, titulo, descripcion, fecha_entrega, archivo_adjunto, estado)
-       VALUES (?, ?, ?, ?, ?, ?, 'ACTIVA')`,
-      [idMateriaDictada, docentes[0].id_docente, titulo, descripcion || null, fechaEntrega, archivo || null]
-    );
+      );
+      if (!docentes.length) {
+        await db.rollback();
+        return res.status(403).json({ error: "El docente no está asignado a esa materia." });
+      }
+      [resultado] = await db.execute(
+        `INSERT INTO Tareas (id_materia_dictada, id_docente, titulo, descripcion, fecha_entrega, archivo_adjunto, estado)
+         VALUES (?, ?, ?, ?, ?, ?, 'ACTIVA')`,
+        [idMateriaDictada, docentes[0].id_docente, titulo, descripcion || null, fechaEntrega, archivo || null]
+      );
+      await guardarAdjuntosTarea(db, resultado.insertId, adjuntos.archivos || []);
+      await db.commit();
+    } catch (error) {
+      await db.rollback();
+      throw error;
+    } finally { db.release(); }
     const [alumnos] = await pool.execute(
       `SELECT DISTINCT al.id_usuario, m.nombre AS materia
        FROM Materias_Dictadas md
@@ -144,17 +172,26 @@ async function actualizarTarea(req, res, next) {
   const titulo = typeof req.body.titulo === "string" ? req.body.titulo.trim() : "";
   const descripcion = typeof req.body.descripcion === "string" ? req.body.descripcion.trim() : "";
   const archivo = typeof req.body.archivo_adjunto === "string" ? req.body.archivo_adjunto.trim() : "";
+  const adjuntos = validarAdjuntos(req.body.archivos_adjunto);
   const fechaEntrega = convertirFechaEntrega(req.body.fecha_entrega);
   if (![idUsuario, idTarea].every((id) => Number.isInteger(id) && id > 0) || !titulo || titulo.length > 150 || descripcion.length > 65535 || archivo.length > 255 || fechaEntrega === undefined) {
     return res.status(400).json({ error: "Revisá el título, el material y la fecha límite." });
   }
+  if (!adjuntos.ok) return res.status(400).json({ error: adjuntos.error });
   try {
     const tarea = await obtenerTareaDocente(idUsuario, idTarea);
     if (!tarea) return res.status(403).json({ error: "No podés editar esta tarea." });
-    await pool.execute(
-      "UPDATE Tareas SET titulo = ?, descripcion = ?, fecha_entrega = ?, archivo_adjunto = ? WHERE id_tarea = ?",
-      [titulo, descripcion || null, fechaEntrega, archivo || null, idTarea]
-    );
+    const db = await pool.getConnection();
+    try {
+      await db.beginTransaction();
+      await db.execute(
+        "UPDATE Tareas SET titulo = ?, descripcion = ?, fecha_entrega = ?, archivo_adjunto = ? WHERE id_tarea = ?",
+        [titulo, descripcion || null, fechaEntrega, archivo || null, idTarea]
+      );
+      await guardarAdjuntosTarea(db, idTarea, adjuntos.archivos);
+      await db.commit();
+    } catch (error) { await db.rollback(); throw error; }
+    finally { db.release(); }
     await notificarAlumnosDeTarea(
       tarea.id_materia_dictada,
       "Tarea actualizada",
@@ -192,8 +229,10 @@ async function entregarTarea(req, res, next) {
   const idUsuario = Number(req.body.id_usuario);
   const idTarea = Number(req.params.idTarea);
   const archivo = typeof req.body.archivo === "string" ? req.body.archivo.trim() : "";
+  const adjuntos = validarAdjuntos(req.body.archivos);
   const comentario = typeof req.body.comentario === "string" ? req.body.comentario.trim() : "";
-  if (!Number.isInteger(idUsuario) || idUsuario <= 0 || !Number.isInteger(idTarea) || idTarea <= 0 || (!archivo && !comentario)) return res.status(400).json({ error: "Adjuntá una ruta de archivo o escribí un comentario." });
+  if (!Number.isInteger(idUsuario) || idUsuario <= 0 || !Number.isInteger(idTarea) || idTarea <= 0 || (!archivo && !comentario && !(Array.isArray(req.body.archivos) && req.body.archivos.length))) return res.status(400).json({ error: "Adjuntá archivos o escribí un comentario." });
+  if (!adjuntos.ok) return res.status(400).json({ error: adjuntos.error });
   try {
     const [pertenece] = await pool.execute(
       `SELECT al.id_alumno, al.nombre AS alumno_nombre, al.apellido AS alumno_apellido, t.fecha_entrega FROM Alumnos al
@@ -206,11 +245,20 @@ async function entregarTarea(req, res, next) {
     const idAlumno = pertenece[0].id_alumno;
     const estado = pertenece[0].fecha_entrega && new Date(pertenece[0].fecha_entrega) < new Date() ? "TARDE" : "ENTREGADA";
     const [previa] = await pool.execute(`SELECT id_entrega FROM Entregas WHERE id_tarea = ? AND id_alumno = ? LIMIT 1`, [idTarea, idAlumno]);
-    if (previa.length) {
-      await pool.execute(`UPDATE Entregas SET archivo = ?, comentario = ?, devolucion_docente = NULL, fecha_entrega = CURRENT_TIMESTAMP, estado = ? WHERE id_entrega = ?`, [archivo || null, comentario || null, estado, previa[0].id_entrega]);
-    } else {
-      await pool.execute(`INSERT INTO Entregas (id_tarea, id_alumno, archivo, comentario, estado) VALUES (?, ?, ?, ?, ?)`, [idTarea, idAlumno, archivo || null, comentario || null, estado]);
-    }
+    let idEntrega = previa[0]?.id_entrega;
+    const db = await pool.getConnection();
+    try {
+      await db.beginTransaction();
+      if (idEntrega) {
+        await db.execute(`UPDATE Entregas SET archivo = ?, comentario = ?, devolucion_docente = NULL, fecha_entrega = CURRENT_TIMESTAMP, estado = ? WHERE id_entrega = ?`, [archivo || null, comentario || null, estado, idEntrega]);
+      } else {
+        const [resultado] = await db.execute(`INSERT INTO Entregas (id_tarea, id_alumno, archivo, comentario, estado) VALUES (?, ?, ?, ?, ?)`, [idTarea, idAlumno, archivo || null, comentario || null, estado]);
+        idEntrega = resultado.insertId;
+      }
+      await guardarAdjuntosEntrega(db, idEntrega, adjuntos.archivos);
+      await db.commit();
+    } catch (error) { await db.rollback(); throw error; }
+    finally { db.release(); }
     const [docentes] = await pool.execute(
       `SELECT d.id_usuario FROM Tareas t JOIN Docentes d ON d.id_docente = t.id_docente WHERE t.id_tarea = ?`, [idTarea]
     );
