@@ -1,4 +1,5 @@
 const pool = require("../config/database");
+const { adjuntosPorTarea, adjuntosPorEntrega } = require("./adjuntos");
 
 async function listarMateriasAlumno(req, res, next) {
   const idUsuario = Number(req.params.idUsuario);
@@ -105,7 +106,19 @@ async function obtenerDetalleMateriaAlumno(req, res, next) {
     delete materia.alumno_nombre;
     delete materia.alumno_apellido;
     delete materia.alumno_dni;
-    res.json({ materia, alumno, calificaciones, asistencias, tareas });
+    const adjuntosTarea = await adjuntosPorTarea(tareas.map((tarea) => tarea.id_tarea));
+    const adjuntosEntrega = await adjuntosPorEntrega(tareas.map((tarea) => tarea.id_entrega).filter(Boolean));
+    res.json({
+      materia,
+      alumno,
+      calificaciones,
+      asistencias,
+      tareas: tareas.map((tarea) => ({
+        ...tarea,
+        archivos_adjunto: adjuntosTarea.get(Number(tarea.id_tarea)) || [],
+        archivos_entregados: adjuntosEntrega.get(Number(tarea.id_entrega)) || [],
+      })),
+    });
   } catch (error) { next(error); }
 }
 

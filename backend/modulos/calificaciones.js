@@ -28,7 +28,7 @@ async function listarCalificacionesDocente(req, res, next) {
   try {
     const [calificaciones] = await pool.execute(
       `SELECT ca.id_calificacion, ca.tipo, ca.descripcion, ca.nota, ca.fecha,
-              al.id_alumno, al.nombre AS alumno_nombre, al.apellido AS alumno_apellido,
+              al.id_alumno, al.dni AS alumno_dni, al.nombre AS alumno_nombre, al.apellido AS alumno_apellido,
               m.nombre AS materia, md.id_materia_dictada, c.anio, c.division
        FROM Calificaciones ca
        JOIN Alumnos al ON al.id_alumno = ca.id_alumno

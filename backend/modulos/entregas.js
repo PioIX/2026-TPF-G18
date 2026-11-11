@@ -1,5 +1,6 @@
 const pool = require("../config/database");
 const { crearNotificaciones } = require("./notificaciones");
+const { adjuntosPorEntrega } = require("./adjuntos");
 
 function idValido(valor) {
   const id = Number(valor);
@@ -30,7 +31,8 @@ async function listarEntregasDocente(req, res, next) {
        ORDER BY e.fecha_entrega DESC, al.apellido, al.nombre`,
       [idTarea]
     );
-    res.json({ entregas });
+    const adjuntos = await adjuntosPorEntrega(entregas.map((entrega) => entrega.id_entrega));
+    res.json({ entregas: entregas.map((entrega) => ({ ...entrega, archivos: adjuntos.get(Number(entrega.id_entrega)) || [] })) });
   } catch (error) { next(error); }
 }
 
