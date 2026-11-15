@@ -80,7 +80,7 @@ async function listarConfiguracionAcademica(req, res, next) {
        ORDER BY c.ciclo_lectivo DESC, c.anio, c.division, m.nombre`
     );
     const [docentes] = await pool.execute(
-      `SELECT d.id_docente, d.nombre, d.apellido, u.username, u.mail
+      `SELECT d.id_docente, d.id_usuario, d.nombre, d.apellido, u.username, u.mail
        FROM Docentes d JOIN Usuarios_1 u ON u.id_usuario = d.id_usuario
        WHERE u.activo = 1 ORDER BY d.apellido, d.nombre`
     );
@@ -101,7 +101,17 @@ async function listarConfiguracionAcademica(req, res, next) {
        WHERE ma.estado = 'ACTIVA'
        ORDER BY c.ciclo_lectivo DESC, c.anio, c.division, a.apellido, a.nombre`
     );
-    res.json({ colegios, orientaciones, cursos, materias, materiasDictadas, docentes, alumnos, matriculas });
+    const [asignacionesDocentes] = await pool.execute(
+      `SELECT dd.id_materia_dictada, dd.id_docente, dd.rol AS rol_docente,
+              d.nombre AS docente_nombre, d.apellido AS docente_apellido,
+              m.nombre AS materia, c.anio, c.division, c.ciclo_lectivo, o.nombre AS orientacion
+       FROM Dictados_Docentes dd JOIN Docentes d ON d.id_docente = dd.id_docente
+       JOIN Materias_Dictadas md ON md.id_materia_dictada = dd.id_materia_dictada
+       JOIN Materias m ON m.id_materia = md.id_materia JOIN Cursos c ON c.id_curso = md.id_curso
+       JOIN Orientaciones o ON o.id_orientacion = c.id_orientacion
+       ORDER BY c.ciclo_lectivo DESC, c.anio, c.division, m.nombre, d.apellido, d.nombre`
+    );
+    res.json({ colegios, orientaciones, cursos, materias, materiasDictadas, docentes, asignacionesDocentes, alumnos, matriculas });
   } catch (error) { next(error); }
 }
 
@@ -220,6 +230,28 @@ async function crearMateriaDictada(req, res, next) {
   } catch (error) { next(error); }
 }
 
+async function actualizarMateriaDictada(req, res, next) {
+  const idAdmin = idValido(req.body.id_admin);
+  const idMateriaDictada = idValido(req.params.idMateriaDictada);
+  const idCurso = idValido(req.body.id_curso);
+  const idMateria = idValido(req.body.id_materia);
+  const horas = req.body.horas_semanales === "" || req.body.horas_semanales === null || req.body.horas_semanales === undefined ? null : Number(req.body.horas_semanales);
+  if (!idAdmin || !idMateriaDictada || !idCurso || !idMateria || (horas !== null && (!Number.isInteger(horas) || horas < 1 || horas > 60))) return res.status(400).json({ error: "Revisá curso, materia y horas semanales." });
+  try {
+    if (!await esAdmin(idAdmin)) return res.status(403).json({ error: "Se requiere una cuenta de administrador activa." });
+    const [resultado] = await pool.execute("UPDATE Materias_Dictadas SET id_curso = ?, id_materia = ?, horas_semanales = ? WHERE id_materia_dictada = ?", [idCurso, idMateria, horas, idMateriaDictada]);
+    if (!resultado.affectedRows) {
+      const [existentes] = await pool.execute("SELECT 1 FROM Materias_Dictadas WHERE id_materia_dictada = ?", [idMateriaDictada]);
+      if (!existentes.length) return res.status(404).json({ error: "No se encontró esa materia asignada." });
+    }
+    res.json({ ok: true, mensaje: "Materia asignada actualizada." });
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "Esa materia ya está asignada al curso seleccionado." });
+    if (error.code === "ER_NO_REFERENCED_ROW_2") return res.status(400).json({ error: "El curso o la materia seleccionados ya no existen." });
+    next(error);
+  }
+}
+
 async function asignarDocente(req, res, next) {
   const idAdmin = idValido(req.body.id_admin);
   const idMateriaDictada = idValido(req.params.idMateriaDictada);
@@ -240,6 +272,62 @@ async function asignarDocente(req, res, next) {
     next(error);
   }
 }
+
+async function editarAsignacionDocente(req, res, next) {
+  const idAdmin = idValido(req.body.id_admin);
+  const idMateriaDictada = idValido(req.params.idMateriaDictada);
+  const idDocenteAnterior = idValido(req.params.idDocente);
+  const idDocente = idValido(req.body.id_docente);
+  const rol = req.body.rol;
+  if (!idAdmin || !idMateriaDictada || !idDocenteAnterior || !idDocente || !["Titular", "Suplente", "Ayudante"].includes(rol)) return res.status(400).json({ error: "Revisá docente y rol." });
+  try {
+    if (!await esAdmin(idAdmin)) return res.status(403).json({ error: "Se requiere una cuenta de administrador activa." });
+    const [docentes] = await pool.execute("SELECT d.id_docente FROM Docentes d JOIN Usuarios_1 u ON u.id_usuario = d.id_usuario WHERE d.id_docente = ? AND u.activo = 1 LIMIT 1", [idDocente]);
+    if (!docentes.length) return res.status(400).json({ error: "El docente seleccionado no está activo." });
+    const [resultado] = await pool.execute("UPDATE Dictados_Docentes SET id_docente = ?, rol = ? WHERE id_materia_dictada = ? AND id_docente = ?", [idDocente, rol, idMateriaDictada, idDocenteAnterior]);
+    if (!resultado.affectedRows) {
+      const [existente] = await pool.execute("SELECT 1 FROM Dictados_Docentes WHERE id_materia_dictada = ? AND id_docente = ? LIMIT 1", [idMateriaDictada, idDocenteAnterior]);
+      if (!existente.length) return res.status(404).json({ error: "No se encontró esa asignación docente." });
+    }
+    res.json({ ok: true, mensaje: "Asignación docente actualizada." });
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "Ese docente ya está asignado a esta materia." });
+    if (error.code === "ER_NO_REFERENCED_ROW_2") return res.status(404).json({ error: "No se encontró la materia dictada o el docente." });
+    next(error);
+  }
+}
+
+async function quitarDocenteAsignado(req, res, next) {
+  const idAdmin = idValido(req.body.id_admin);
+  const idMateriaDictada = idValido(req.params.idMateriaDictada);
+  const idDocente = idValido(req.params.idDocente);
+  if (!idAdmin || !idMateriaDictada || !idDocente) return res.status(400).json({ error: "Asignación inválida." });
+  try {
+    if (!await esAdmin(idAdmin)) return res.status(403).json({ error: "Se requiere una cuenta de administrador activa." });
+    const [resultado] = await pool.execute("DELETE FROM Dictados_Docentes WHERE id_materia_dictada = ? AND id_docente = ?", [idMateriaDictada, idDocente]);
+    if (!resultado.affectedRows) return res.status(404).json({ error: "No se encontró esa asignación docente." });
+    res.json({ ok: true, mensaje: "Docente quitado de la materia." });
+  } catch (error) { next(error); }
+}
+
+async function eliminarRegistroAcademico(req, res, next, { tabla, clave, etiqueta }) {
+  const idAdmin = idValido(req.body.id_admin);
+  const id = idValido(req.params.id);
+  if (!idAdmin || !id) return res.status(400).json({ error: "Datos inválidos." });
+  try {
+    if (!await esAdmin(idAdmin)) return res.status(403).json({ error: "Se requiere una cuenta de administrador activa." });
+    const [resultado] = await pool.execute(`DELETE FROM ${tabla} WHERE ${clave} = ?`, [id]);
+    if (!resultado.affectedRows) return res.status(404).json({ error: `No se encontró ${etiqueta}.` });
+    res.json({ ok: true, mensaje: `Se eliminó ${etiqueta}.` });
+  } catch (error) {
+    if (["ER_ROW_IS_REFERENCED_2", "ER_ROW_IS_REFERENCED"].includes(error.code)) return res.status(409).json({ error: `No se puede eliminar ${etiqueta} porque tiene información académica vinculada.` });
+    next(error);
+  }
+}
+
+const eliminarCurso = (req, res, next) => eliminarRegistroAcademico(req, res, next, { tabla: "Cursos", clave: "id_curso", etiqueta: "el curso" });
+const eliminarMateria = (req, res, next) => eliminarRegistroAcademico(req, res, next, { tabla: "Materias", clave: "id_materia", etiqueta: "la materia" });
+const eliminarMateriaDictada = (req, res, next) => eliminarRegistroAcademico(req, res, next, { tabla: "Materias_Dictadas", clave: "id_materia_dictada", etiqueta: "la materia asignada" });
 
 async function matricularAlumno(req, res, next) {
   const idAdmin = idValido(req.body.id_admin);
@@ -274,4 +362,4 @@ async function cambiarEstadoMatricula(req, res, next) {
   } catch (error) { next(error); }
 }
 
-module.exports = { listarConfiguracionAcademica, guardarOrientacion, crearCurso, actualizarCurso, guardarMateria, crearMateriaDictada, asignarDocente, matricularAlumno, cambiarEstadoMatricula };
+module.exports = { listarConfiguracionAcademica, guardarOrientacion, crearCurso, actualizarCurso, guardarMateria, crearMateriaDictada, actualizarMateriaDictada, asignarDocente, editarAsignacionDocente, quitarDocenteAsignado, eliminarCurso, eliminarMateria, eliminarMateriaDictada, matricularAlumno, cambiarEstadoMatricula };

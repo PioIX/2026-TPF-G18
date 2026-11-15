@@ -10,11 +10,19 @@ router.get("/:usuarioId", async (req, res, next) => {
       `SELECT c.id_chat AS id, c.nombre, c.es_grupal AS es_grupo, c.foto, c.fecha_creacion,
         (SELECT m.contenido FROM Mensajes m WHERE m.id_chat = c.id_chat ORDER BY m.fecha_envio DESC LIMIT 1) AS ultimo_contenido,
         (SELECT m.fecha_envio FROM Mensajes m WHERE m.id_chat = c.id_chat ORDER BY m.fecha_envio DESC LIMIT 1) AS ultimo_envio,
+        (SELECT COALESCE(
+          (SELECT NULLIF(CONCAT_WS(' ', NULLIF(a.nombre, ''), NULLIF(a.apellido, '')), '') FROM Alumnos a WHERE a.id_usuario = u.id_usuario),
+          (SELECT NULLIF(CONCAT_WS(' ', NULLIF(d.nombre, ''), NULLIF(d.apellido, '')), '') FROM Docentes d WHERE d.id_usuario = u.id_usuario),
+          u.username
+        ) FROM Chats_por_Usuarios cu2 JOIN Usuarios_1 u ON u.id_usuario = cu2.id_usuario
+          WHERE cu2.id_chat = c.id_chat AND cu2.id_usuario <> ? LIMIT 1) AS contacto,
         (SELECT u.username FROM Chats_por_Usuarios cu2 JOIN Usuarios_1 u ON u.id_usuario = cu2.id_usuario
-          WHERE cu2.id_chat = c.id_chat AND cu2.id_usuario <> ? LIMIT 1) AS contacto
+          WHERE cu2.id_chat = c.id_chat AND cu2.id_usuario <> ? LIMIT 1) AS contacto_usuario,
+        (SELECT u.rol FROM Chats_por_Usuarios cu2 JOIN Usuarios_1 u ON u.id_usuario = cu2.id_usuario
+          WHERE cu2.id_chat = c.id_chat AND cu2.id_usuario <> ? LIMIT 1) AS contacto_rol
        FROM Chats c JOIN Chats_por_Usuarios cu ON cu.id_chat = c.id_chat
        WHERE cu.id_usuario = ? AND c.activo = 1
-       ORDER BY COALESCE(ultimo_envio, c.fecha_creacion) DESC`, [userId, userId]
+       ORDER BY COALESCE(ultimo_envio, c.fecha_creacion) DESC`, [userId, userId, userId, userId]
     );
     res.json(chats.map((chat) => ({ ...chat, nombre: chat.es_grupo ? chat.nombre : (chat.contacto || "Conversación"), ultimo_mensaje: chat.ultimo_contenido ? { contenido: chat.ultimo_contenido, fecha_envio: chat.ultimo_envio } : null })));
   } catch (error) { next(error); }

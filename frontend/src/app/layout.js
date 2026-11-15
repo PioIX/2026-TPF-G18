@@ -1,5 +1,6 @@
 import "./globals.css";
 import MotionProvider from "@/components/motion/MotionProvider";
+import RouteChangeLoader from "@/components/ui/RouteChangeLoader";
 
 export const metadata = {
   title: "EducaLink",
@@ -9,7 +10,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <body><MotionProvider>{children}</MotionProvider></body>
+      <body><MotionProvider>{children}<RouteChangeLoader /></MotionProvider></body>
     </html>
   );
 }

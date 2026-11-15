@@ -264,7 +264,7 @@ async function entregarTarea(req, res, next) {
     );
     await crearNotificaciones(docentes.map((docente) => docente.id_usuario), {
       titulo: previa.length ? "Entrega actualizada" : "Nueva entrega",
-      mensaje: `${pertenece[0].alumno_apellido}, ${pertenece[0].alumno_nombre} entregó una tarea.`,
+      mensaje: `${pertenece[0].alumno_nombre} ${pertenece[0].alumno_apellido} entregó una tarea.`,
       tipo: "TAREA",
     }, req.app.get("io"));
     res.json({ ok: true, mensaje: "Entrega guardada." });

@@ -28,12 +28,71 @@ html[data-theme="dark"] body {
 button, input, select, textarea {
   font-family: inherit;
 }
+body :is(input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="reset"]), select) {
+  box-sizing: border-box !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  line-height: normal !important;
+  vertical-align: middle;
+}
+body input[type="file"] {
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  line-height: normal !important;
+}
+body input[type="file"]::file-selector-button {
+  height: 32px;
+  margin-right: 10px;
+}
+body form button {
+  box-sizing: border-box !important;
+  height: 44px !important;
+  min-height: 44px !important;
+}
+body select {
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='m2 3.5 3 3 3-3' fill='none' stroke='%2361748A' stroke-width='1.5'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 10px 10px !important;
+}
+html[data-theme="dark"] body select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='m2 3.5 3 3 3-3' fill='none' stroke='%23AABBD2' stroke-width='1.5'/%3E%3C/svg%3E") !important;
+}
 button, a, input, select, textarea {
   transition-property: color, background-color, border-color, box-shadow, transform;
   transition-duration: 180ms;
   transition-timing-function: ease;
 }
-html[data-theme="dark"] body :is([class*="profilePage"], [class*="dashboard"], [class*="overviewGrid"], [class*="usersPanel"], [class*="identityCard"], [class*="formCard"], [class*="passwordCard"], [class*="statCard"], [class*="welcome"], [class*="panel"], [class*="item"], [class*="toolbar"], [class*="actionCard"], [class*="searchBox"], [class*="modal"]) {
+.invisible { visibility: hidden; }
+.select-none { user-select: none; }
+.text-sm { font-size: 14px; }
+.font-medium { font-weight: 500; }
+.mb-2 { margin-bottom: 8px; }
+.routeLoadingIndicator { position: fixed; z-index: 10000; top: 16px; left: 50%; display: grid; place-items: center; width: 52px; height: 52px; transform: translateX(-50%); background: transparent; pointer-events: none; }
+.routeLoadingIndicator .loadingSpinner { width: 48px; height: 48px; border-width: 5px; }
+.loadingIndicator { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 14px 18px; color: #60748f; font-size: 13px; }
+.loadingIndicatorInline { display: inline-flex; justify-content: flex-start; gap: 7px; min-height: 0; padding: 0; color: inherit; font: inherit; }
+.loadingSpinner { display: inline-block; flex: 0 0 auto; width: 20px; height: 20px; border: 3px solid #c8def4; border-top-color: #168ce0; border-radius: 50%; animation: educalinkSpin .8s linear infinite; }
+.loadingIndicatorInline .loadingSpinner { width: 13px; height: 13px; border-width: 2px; }
+html[data-theme="dark"] .loadingSpinner { border-color: #344b68; border-top-color: #55b8f2; }
+button:has(> .loadingIndicatorInline) { display: inline-flex; align-items: center; justify-content: center; gap: 7px; white-space: nowrap; }
+@keyframes educalinkSpin { 0% { transform: rotate(0deg); } 50% { transform: rotate(180deg); } 100% { transform: rotate(360deg); } }
+html[data-theme="dark"] .loadingIndicator { color: #b9cbe2; }
+@media (prefers-reduced-motion: reduce) { .loadingSpinner { animation: none; } }
+.routeLoadingIndicator .loadingSpinner { animation-name: educalinkSpin !important; animation-duration: .8s !important; animation-timing-function: linear !important; animation-iteration-count: infinite !important; animation-direction: normal !important; }
+html[data-theme="dark"] body :is([class*="usersPanel"], [class*="identityCard"], [class*="formCard"], [class*="passwordCard"], [class*="statCard"]:not([class*="statTone"]):not([class*="Motion"]), [class*="welcome"], [class*="panel"], [class*="item"], [class*="toolbar"], [class*="actionCard"], [class*="searchBox"], [class*="modal"]) {
   color: #dce7f6;
   background-color: #17263c;
   border-color: #2a3d57;

@@ -16,7 +16,7 @@
 .accountState i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .active { color: #36866e; }
 .inactive { color: #9ca5b1; }
-.fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; padding: 20px 0; }
+.fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: end; gap: 16px; padding: 20px 0; }
 .fields label { display: grid; gap: 7px; color: #596b81; font-size: 10px; font-weight: 700; }
 .fields input { width: 100%; min-width: 0; height: 39px; padding: 0 11px; border: 1px solid #dfe6ee; border-radius: 8px; outline: none; color: #35475f; background: #fff; font: inherit; font-size: 11px; }
 .fields input:focus { border-color: #6e8fd5; box-shadow: 0 0 0 3px #6e8fd51c; }

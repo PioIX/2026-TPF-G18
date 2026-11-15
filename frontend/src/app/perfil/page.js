@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AcademicLayout, API } from "@/components/academic/AcademicPage";
 import styles from "./perfil.module.css";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const LINKS = {
   ALUMNO: [{ href: "/alumno", label: "Inicio" }, { href: "/alumno/materias", label: "Materias" }, { href: "/alumno/asistencias", label: "Asistencias" }, { href: "/alumno/calificaciones", label: "Calificaciones" }, { href: "/alumno/tareas", label: "Tareas" }, { href: "/chat", label: "Chat" }],
@@ -49,7 +50,7 @@ export default function PerfilPage() {
           setPerfil(data.perfil);
           setFormulario({
             username: data.perfil.username || "", mail: data.perfil.mail || "",
-            nombre: data.perfil.nombre === data.perfil.username && data.perfil.rol === "ADMIN" ? "" : data.perfil.nombre || "",
+            nombre: data.perfil.nombre || "",
             apellido: data.perfil.apellido || "", dni: data.perfil.dni || "",
             fecha_nacimiento: data.perfil.fecha_nacimiento ? String(data.perfil.fecha_nacimiento).slice(0, 10) : "",
             especialidad: data.perfil.especialidad || "",
@@ -84,7 +85,7 @@ export default function PerfilPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "No se pudieron guardar los cambios.");
       setPerfil(data.perfil);
-      const actualizada = { ...usuario, username: data.perfil.username, mail: data.perfil.mail };
+      const actualizada = { ...usuario, username: data.perfil.username, mail: data.perfil.mail, nombre: data.perfil.nombre, apellido: data.perfil.apellido };
       sessionStorage.setItem("educalink_usuario", JSON.stringify(actualizada));
       setUsuario(actualizada);
       setMensaje(data.mensaje || "Perfil actualizado.");
@@ -115,34 +116,35 @@ export default function PerfilPage() {
 
   const rol = perfil?.rol || usuario?.rol;
   const nombreRol = rol === "ADMIN" ? "Administrador" : rol === "DOCENTE" ? "Docente" : "Alumno";
-  const inicial = (perfil?.username || usuario?.username || "U").slice(0, 1).toUpperCase();
+  const nombreCompleto = [perfil?.nombre, perfil?.apellido].map((parte) => String(parte || "").trim()).filter(Boolean).join(" ") || perfil?.username || usuario?.username || "Perfil";
+  const inicial = (perfil?.nombre || perfil?.username || usuario?.username || "U").slice(0, 1).toUpperCase();
 
   return <AcademicLayout title="Mi perfil" description="Consultá y actualizá los datos de tu cuenta." usuario={usuario} links={LINKS[rol] || LINKS.ALUMNO}>
     <div className={styles.profilePage}>
       <section className={styles.identityCard}>
-        <div className={styles.identityMain}><div className={styles.avatar}>{inicial}</div><div><span className={styles.eyebrow}>CUENTA EDUCALINK</span><h2>{perfil ? [perfil.nombre, perfil.apellido].filter((parte) => parte && parte !== perfil.username).join(" ") || perfil.username : usuario?.username || "Perfil"}</h2><p>{perfil?.mail || usuario?.mail}</p></div></div>
+        <div className={styles.identityMain}><div className={styles.avatar}>{inicial}</div><div><span className={styles.eyebrow}>CUENTA EDUCALINK</span><h2>{nombreCompleto}</h2><p>{perfil?.mail || usuario?.mail}</p></div></div>
         <span className={styles.roleBadge}>{nombreRol}</span>
       </section>
 
       {error && <p className={styles.error} role="alert">{error}</p>}
       {mensaje && <p className={styles.success} role="status">{mensaje}</p>}
-      {cargando ? <div className={styles.loading}>Cargando tus datos…</div> : perfil && <form className={styles.formCard} onSubmit={guardar}>
+      {cargando ? <LoadingSpinner label="Cargando tus datos…" /> : perfil && <form className={styles.formCard} onSubmit={guardar}>
         <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>INFORMACIÓN PERSONAL</span><h2>Datos de la cuenta</h2><p>Estos datos se usan para identificarte en la plataforma.</p></div><span className={`${styles.accountState} ${Number(perfil.activo) ? styles.active : styles.inactive}`}><i />{Number(perfil.activo) ? "Cuenta activa" : "Cuenta inactiva"}</span></div>
 
         <div className={styles.fields}>
           <label>Nombre de usuario<input name="username" value={formulario.username || ""} onChange={actualizarCampo} required maxLength={100} autoComplete="username" /></label>
           <label>Correo electrónico<input name="mail" type="email" value={formulario.mail || ""} onChange={actualizarCampo} required maxLength={100} autoComplete="email" /></label>
+          <label>Nombre<input name="nombre" value={formulario.nombre || ""} onChange={actualizarCampo} required maxLength={50} autoComplete="given-name" /></label>
+          <label>Apellido<input name="apellido" value={formulario.apellido || ""} onChange={actualizarCampo} required maxLength={50} autoComplete="family-name" /></label>
           {rol !== "ADMIN" && <>
-            <label>Nombre<input name="nombre" value={formulario.nombre || ""} onChange={actualizarCampo} required maxLength={50} autoComplete="given-name" /></label>
-            <label>Apellido<input name="apellido" value={formulario.apellido || ""} onChange={actualizarCampo} required maxLength={50} autoComplete="family-name" /></label>
-            <label>DNI<input name="dni" value={formulario.dni || ""} onChange={actualizarCampo} maxLength={20} /></label>
+            <label>DNI<input name="dni" value={formulario.dni || ""} onChange={actualizarCampo} maxLength={20} placeholder="Ingresá tu DNI" /></label>
             {rol === "ALUMNO" && <label>Fecha de nacimiento<input name="fecha_nacimiento" type="date" value={formulario.fecha_nacimiento || ""} onChange={actualizarCampo} /></label>}
-            {rol === "DOCENTE" && <label>Especialidad<input name="especialidad" value={formulario.especialidad || ""} onChange={actualizarCampo} maxLength={100} /></label>}
+            {rol === "DOCENTE" && <label>Cargo / Función<input name="especialidad" value={formulario.especialidad || ""} onChange={actualizarCampo} maxLength={100} /></label>}
           </>}
           <label>Rol en EducaLink<input value={nombreRol} readOnly /></label>
           <label>Cuenta creada<input value={fechaLegible(perfil.fecha_registro)} readOnly /></label>
         </div>
-        <div className={styles.formFooter}><p>La contraseña se administra en el apartado de seguridad.</p><button type="submit" disabled={guardando}>{guardando ? "Guardando…" : "Guardar cambios"}</button></div>
+        <div className={styles.formFooter}><p>La contraseña se administra en el apartado de seguridad.</p><button type="submit" disabled={guardando}>{guardando ? <LoadingSpinner inline label="Guardando…" /> : "Guardar cambios"}</button></div>
       </form>}
       {!cargando && perfil && <form className={styles.passwordCard} onSubmit={cambiarContrasena}>
         <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>SEGURIDAD</span><h2>Cambiar contraseña</h2><p>Confirmá tu contraseña actual y elegí una nueva de al menos 8 caracteres.</p></div></div>
@@ -151,7 +153,7 @@ export default function PerfilPage() {
           <label>Nueva contraseña<input type="password" autoComplete="new-password" minLength={8} maxLength={255} required value={contrasenas.nueva} onChange={(event) => setContrasenas({ ...contrasenas, nueva: event.target.value })} /></label>
           <label>Confirmar nueva contraseña<input type="password" autoComplete="new-password" minLength={8} maxLength={255} required value={contrasenas.confirmar} onChange={(event) => setContrasenas({ ...contrasenas, confirmar: event.target.value })} /></label>
         </div>
-        <div className={styles.formFooter}><span /><button type="submit" disabled={guardandoContrasena}>{guardandoContrasena ? "Actualizando…" : "Actualizar contraseña"}</button></div>
+        <div className={styles.formFooter}><span /><button type="submit" disabled={guardandoContrasena}>{guardandoContrasena ? <LoadingSpinner inline label="Actualizando…" /> : "Actualizar contraseña"}</button></div>
       </form>}
     </div>
   </AcademicLayout>;

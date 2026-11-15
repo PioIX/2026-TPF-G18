@@ -13,12 +13,20 @@ export async function leerPlanilla(file) {
   if (file.size > MAX_BYTES) throw new Error("El archivo supera el límite de 10 MB.");
   if (!/\.(xlsx|csv)$/i.test(file.name)) throw new Error("Usá un archivo Excel .xlsx o CSV. Las hojas de Google se pueden descargar en uno de esos formatos.");
 
-  const rows = /\.csv$/i.test(file.name) ? await leerCsv(file) : await readXlsxFile(file);
-  const headers = (rows.shift() || []).map(normalizarEncabezado);
+  let filas;
+  if (/\.csv$/i.test(file.name)) {
+    filas = await leerCsv(file);
+  } else {
+    const hojas = await readXlsxFile(file);
+    filas = Array.isArray(hojas?.[0]?.data) ? hojas[0].data : [];
+  }
+  const rows = Array.isArray(filas) ? [...filas] : [];
+  const primeraFila = rows.shift();
+  const headers = Array.isArray(primeraFila) ? primeraFila.map(normalizarEncabezado) : [];
   if (!headers.length || !rows.length) throw new Error("La primera fila debe contener encabezados y debajo tiene que haber datos.");
 
   return rows
-    .filter((row) => row.some((cell) => String(cell ?? "").trim() !== ""))
+    .filter((row) => Array.isArray(row) && row.some((cell) => String(cell ?? "").trim() !== ""))
     .map((row, index) => Object.fromEntries(headers.map((header, column) => [header, celdaTexto(row[column])])))
     .map((row, index) => ({ ...row, __fila: index + 2 }));
 }

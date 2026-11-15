@@ -13,6 +13,9 @@
   border-radius: 16px;
   background: linear-gradient(110deg, #fff 58%, #f1f6ff);
 }
+:global(html[data-theme="dark"]) .welcome { color: #e0e9f7; border-color: #2a3d57; background: linear-gradient(110deg, #17263c, #1d3049); }
+:global(html[data-theme="dark"]) .welcome h2 { color: #eff5ff; }
+:global(html[data-theme="dark"]) .welcome p { color: #aabbd2; }
 .welcome h2 {
   margin: 6px 0 5px;
   color: #172b4d;
@@ -100,6 +103,13 @@
   border-color: #d5e2fc;
   background: linear-gradient(145deg, #fff, #f4f8ff);
 }
+:global(html[data-theme="dark"]) .statCard,
+:global(html[data-theme="dark"]) .statMain { color: #e0e9f7; border-color: #2a3d57; background: #17263c; }
+:global(html[data-theme="dark"]) .statCard > span { color: #aabbd2; }
+:global(html[data-theme="dark"]) .statCard > strong { color: #eff5ff; }
+:global(html[data-theme="dark"]) .alertSuccess { color: #b1e8d2; background: #183d35; }
+:global(html[data-theme="dark"]) .alertError { color: #ffc1c7; background: #40272f; }
+:global(html[data-theme="dark"]) .totalPill { color: #c6d8ef; background: #20334b; }
 .statMain > i {
   color: #fff;
   background: #4773d4;
@@ -141,6 +151,8 @@
 .actionCard {
   display: flex;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   align-items: center;
   gap: 12px;
   padding: 10px 11px;
@@ -304,16 +316,19 @@
   font-size: 11px;
 }
 .toolbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) auto;
+  align-items: end;
   gap: 9px;
   margin: 17px 0 13px;
 }
 .searchBox {
   display: flex;
-  flex: 1;
   align-items: center;
   gap: 9px;
-  min-width: 120px;
+  height: 44px;
+  box-sizing: border-box;
+  min-width: 0;
   padding: 0 11px;
   border: 1px solid #e1e7ef;
   border-radius: 9px;
@@ -334,11 +349,15 @@
   font: inherit;
   font-size: 11px;
 }
+.toolbar > select { width: 100%; min-width: 0; }
 .searchBox input::placeholder {
   color: #a6b0be;
 }
 .roleSelect {
-  min-width: 130px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 44px;
+  min-width: 0;
   padding: 0 10px;
   border: 1px solid #e1e7ef;
   border-radius: 9px;
@@ -347,7 +366,20 @@
   font: inherit;
   font-size: 11px;
 }
-.searchButton,
+.searchButton {
+  width: auto;
+  height: 44px;
+  padding: 0 24px;
+  border: 1px solid #2563eb;
+  border-radius: 9px;
+  color: #fff;
+  background: #2563eb;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.searchButton:hover { background: #3b82f6; border-color: #3b82f6; }
 .cancelButton {
   padding: 0 14px;
   border: 1px solid #dfe6ef;
@@ -359,10 +391,7 @@
   font-weight: 700;
   cursor: pointer;
 }
-.searchButton:hover,
-.cancelButton:hover {
-  background: #f6f8fb;
-}
+.cancelButton:hover { background: #f6f8fb; }
 .tableWrap {
   width: 100%;
   overflow-x: auto;
@@ -589,6 +618,7 @@
 .createForm {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
   gap: 12px;
   padding: 18px 23px 21px;
 }
@@ -696,19 +726,10 @@
   .usersPanel {
     padding: 15px 13px;
   }
-  .toolbar {
-    flex-wrap: wrap;
-  }
-  .searchBox {
-    flex-basis: 100%;
-  }
-  .roleSelect {
-    flex: 1;
-    height: 36px;
-  }
-  .searchButton {
-    min-height: 36px;
-  }
+  .toolbar { grid-template-columns: 1fr; }
+  .searchBox { width: 100%; }
+  .roleSelect { width: 100%; height: 44px; }
+  .searchButton { justify-self: end; }
   .createForm {
     grid-template-columns: 1fr;
     padding: 16px;
@@ -719,4 +740,27 @@
   .modalActions {
     grid-column: 1;
   }
+}
+
+:global(html[data-theme="dark"]) .editButton,
+:global(html[data-theme="dark"]) .enableButton {
+  color: #e2e8f0;
+  background: #1e293b;
+  border-color: #475569;
+}
+:global(html[data-theme="dark"]) .editButton:hover,
+:global(html[data-theme="dark"]) .enableButton:hover {
+  color: #f8fafc;
+  background: #334155;
+  border-color: #64748b;
+}
+:global(html[data-theme="dark"]) .disableButton {
+  color: #fecaca;
+  background: rgb(127 29 29 / 25%);
+  border-color: rgb(248 113 113 / 35%);
+}
+:global(html[data-theme="dark"]) .disableButton:hover {
+  color: #fee2e2;
+  background: rgb(127 29 29 / 40%);
+  border-color: rgb(248 113 113 / 55%);
 }
