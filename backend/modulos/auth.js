@@ -8,7 +8,7 @@ async function iniciarSesion(req, res, next) {
   }
   try {
     const [usuarios] = await pool.execute(
-      `SELECT id_usuario, username, mail, foto, fecha_registro, rol
+      `SELECT id_usuario, username, mail, foto, fecha_registro, rol, nombre, apellido
        FROM Usuarios_1 WHERE mail = ? AND password = ? AND activo = 1 LIMIT 1`,
       [email, password]
     );
@@ -20,4 +20,21 @@ async function iniciarSesion(req, res, next) {
     return next(error);
   }
 }
-module.exports = { iniciarSesion };
+
+async function listarCorreosAdministradores(_req, res, next) {
+  try {
+    const [administradores] = await pool.execute(
+      `SELECT mail FROM Usuarios_1
+       WHERE rol = 'ADMIN'
+         AND LOWER(username) <> 'adminprueba'
+         AND LOWER(mail) <> 'pruebaadmin4@gmail.com'
+         AND mail IS NOT NULL AND TRIM(mail) <> ''
+       ORDER BY username`
+    );
+    res.json({ correos: administradores.map(({ mail }) => mail) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { iniciarSesion, listarCorreosAdministradores };

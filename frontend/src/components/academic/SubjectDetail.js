@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { AcademicLayout, API, useAcademicUser, colorMateria, styles as academicStyles } from "./AcademicPage";
 import styles from "./SubjectDetail.module.css";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { calcularPromedioNotas } from "@/lib/notas";
 
 const LINKS = [
   { href: "/alumno", label: "Inicio" }, { href: "/alumno/materias", label: "Materias" },
@@ -47,9 +49,7 @@ export default function SubjectDetail() {
   const calificaciones = datos?.calificaciones || [];
   const asistencias = datos?.asistencias || [];
   const tareas = datos?.tareas || [];
-  const promedio = calificaciones.length
-    ? (calificaciones.reduce((total, item) => total + Number(item.nota || 0), 0) / calificaciones.length).toFixed(2)
-    : "—";
+  const promedio = calcularPromedioNotas(calificaciones);
   const presentes = asistencias.filter((item) => item.estado === "PRESENTE").length;
   const presentismo = asistencias.length ? `${Math.round((presentes / asistencias.length) * 100)}%` : "—";
   const pendientes = tareas.filter((item) => !item.id_entrega && item.estado_tarea === "ACTIVA").length;
@@ -57,7 +57,7 @@ export default function SubjectDetail() {
   return <AcademicLayout title={materia?.nombre || "Detalle de materia"} description="Toda tu información académica de esta materia." usuario={usuario} links={LINKS}>
     <div className={styles.detailPage}>
       <Link className={styles.backLink} href="/alumno/materias">← Volver a mis materias</Link>
-      {cargando && <p className={styles.state}>Cargando los datos de la materia…</p>}
+      {cargando && <LoadingSpinner label="Cargando los datos de la materia…" />}
       {error && <p className={styles.error} role="alert">{error}</p>}
       {!cargando && !error && materia && <>
         <section className={styles.hero}>
@@ -77,7 +77,7 @@ export default function SubjectDetail() {
         </section>
 
         <section className={styles.stats} aria-label="Resumen de la materia">
-          <article className={styles.statBlue}><span>Calificaciones</span><strong>{calificaciones.length}</strong><small>Promedio {promedio}</small></article>
+          <article className={styles.statBlue}><span>Calificaciones</span><strong>{calificaciones.length}</strong><small>Promedio numérico {promedio}</small></article>
           <article className={styles.statGreen}><span>Presentismo</span><strong>{presentismo}</strong><small>{presentes} presentes de {asistencias.length} registros</small></article>
           <article className={styles.statOrange}><span>Tareas pendientes</span><strong>{pendientes}</strong><small>{tareas.length} tareas en total</small></article>
         </section>

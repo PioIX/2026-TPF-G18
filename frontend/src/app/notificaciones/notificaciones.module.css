@@ -12,8 +12,12 @@
 
 .toolbar div { display: flex; align-items: baseline; gap: 7px; color: #77859a; font-size: 13px; }
 .toolbar strong { color: #1f3a93; font-size: 20px; }
-.toolbar button, .readButton { border: 0; border-radius: 8px; padding: 9px 12px; color: #285b9f; background: #edf5ff; font-size: 12px; font-weight: 700; cursor: pointer; }
-.toolbar button:disabled, .readButton:disabled { opacity: .55; cursor: wait; }
+.toolbar button, .readButton { border: 1px solid #475569; border-radius: 8px; padding: 9px 12px; color: #e2e8f0; background: #1e293b; font-size: 12px; font-weight: 700; cursor: pointer; transition: background-color 160ms ease; }
+.toolbar button:hover:not(:disabled), .readButton:hover:not(:disabled) { background: #334155; }
+.toolbar button:disabled, .readButton:disabled { opacity: .5; cursor: not-allowed; }
+.toolbarActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.toolbar .deleteAllButton { color: #ffc1c7; border-color: #68414a; background: #3b252e; }
+.toolbar .deleteAllButton:hover:not(:disabled) { background: #4b2c36; }
 
 .list { display: grid; gap: 10px; }
 
@@ -41,12 +45,19 @@
 .meta { display: flex; flex-wrap: wrap; gap: 10px; color: #8996a8; font-size: 10px; }
 .meta span { font-weight: 700; text-transform: capitalize; }
 .readButton { align-self: center; white-space: nowrap; }
+.actions { display: flex; align-items: center; gap: 7px; }
+.deleteButton { border: 1px solid #68414a; border-radius: 8px; padding: 8px 10px; color: #ffc1c7; background: #3b252e; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.deleteButton:hover:not(:disabled) { background: #4b2c36; }
+.deleteButton:disabled { opacity: .55; cursor: wait; }
 
 @keyframes notificacionEntra { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 640px) {
   .toolbar { align-items: flex-start; flex-direction: column; }
+  .toolbarActions { width: 100%; }
+  .toolbarActions button { flex: 1 1 auto; }
   .item { gap: 10px; padding: 14px; }
   .icon { width: 34px; height: 34px; }
   .readButton { align-self: flex-end; padding: 7px 9px; }
+  .actions { align-self: flex-end; }
 }

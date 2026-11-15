@@ -5,17 +5,22 @@
 }
 .tabs {
   display: flex;
-  gap: 7px;
-  padding: 5px;
-  border: 1px solid #e4eaf2;
-  border-radius: 11px;
-  background: #fff;
+  gap: 4px;
+  margin: 0 0 18px;
+  padding: 0;
+  overflow-x: auto;
+  border: 0;
+  border-bottom: 1px solid #dce5f1;
+  border-radius: 0;
+  background: transparent;
 }
 .tabs button {
-  min-height: 36px;
-  padding: 0 13px;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 14px;
   border: 0;
-  border-radius: 8px;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   color: #718097;
   background: transparent;
   font: inherit;
@@ -23,14 +28,24 @@
   font-weight: 700;
   cursor: pointer;
 }
-.tabs button:hover {
-  color: #3159a7;
-  background: #f5f8fd;
-}
-.tabs .tabActive {
-  color: #3159a7;
-  background: #edf3ff;
-}
+.tabs button:hover { color: #3159a7; background: #f5f8fd; }
+.tabs .tabActive { color: #3159a7; border-bottom-color: #3975c8; background: transparent; }
+:global(html[data-theme="dark"]) .tabs { border-color: #2a3d58; background: transparent; }
+:global(html[data-theme="dark"]) .tabs button { color: #b7c8de; }
+:global(html[data-theme="dark"]) .tabs button:hover { color: #e5f0ff; background: #20334b; }
+:global(html[data-theme="dark"]) .tabs .tabActive { color: #eaf3ff; border-bottom-color: #73a8eb; background: transparent; }
+:global(html[data-theme="dark"]) .panel { color: #e0e9f7; border-color: #2a3d57; background: #17263c; }
+:global(html[data-theme="dark"]) .panelHeading h2 { color: #eff5ff; }
+:global(html[data-theme="dark"]) .panelHeading p,
+:global(html[data-theme="dark"]) .fields label { color: #aabbd2; }
+:global(html[data-theme="dark"]) .countPill { color: #c6d8ef; background: #20334b; }
+:global(html[data-theme="dark"]) .table th { color: #b9cbe2; border-color: #2a3d57; background: #20334b; }
+:global(html[data-theme="dark"]) .table td { color: #d0deef; border-color: #2a3d57; }
+:global(html[data-theme="dark"]) .table td strong { color: #edf4ff; }
+:global(html[data-theme="dark"]) .secondaryButton { color: #c3d5ed; border-color: #354c68; background: #20334b; }
+:global(html[data-theme="dark"]) .dangerButton { color: #ffc1c7; border-color: #68414a; background: #3b252e; }
+:global(html[data-theme="dark"]) .success { color: #b1e8d2; border-color: #2b6652; background: #183d35; }
+:global(html[data-theme="dark"]) .error { color: #ffc1c7; border-color: #68414a; background: #40272f; }
 .formsGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -70,6 +85,7 @@
 .fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
   gap: 12px;
 }
 .fields label {
@@ -250,10 +266,10 @@
 }
 
 :global(html[data-theme="dark"]) .page { color: #dce8f8; }
-:global(html[data-theme="dark"]) .tabs { background: #17263c; border-color: #2a3d58; }
+:global(html[data-theme="dark"]) .tabs { background: transparent; border-color: #2a3d58; }
 :global(html[data-theme="dark"]) .tabs button { color: #b7c8de; }
 :global(html[data-theme="dark"]) .tabs button:hover { color: #e5f0ff; background: #20334b; }
-:global(html[data-theme="dark"]) .tabs .tabActive { color: #eaf3ff; background: #29496e; }
+:global(html[data-theme="dark"]) .tabs .tabActive { color: #eaf3ff; border-bottom-color: #73a8eb; background: transparent; }
 :global(html[data-theme="dark"]) .panel { color: #dce8f8; background: #17263c; border-color: #2a3d58; }
 :global(html[data-theme="dark"]) .panelHeading h2 { color: #eff5ff; }
 :global(html[data-theme="dark"]) .panelHeading p,
@@ -294,4 +310,48 @@
   .fullField {
     grid-column: auto;
   }
+}
+
+.enrollmentHeading { align-items: flex-end; }
+.enrollmentFilters {
+  display: grid;
+  grid-template-columns: minmax(190px, 1fr) minmax(220px, 1.2fr);
+  align-items: end;
+  gap: 10px;
+  width: min(100%, 560px);
+}
+.enrollmentFilters label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #586a80;
+  font-size: 10px;
+  font-weight: 700;
+}
+.enrollmentFilters input,
+.enrollmentFilters select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #dfe6ee;
+  border-radius: 8px;
+  outline: none;
+  color: #35475f;
+  background: #fff;
+  font: inherit;
+  font-size: 11px;
+}
+.enrollmentFilters input:focus,
+.enrollmentFilters select:focus { border-color: #6e8fd5; box-shadow: 0 0 0 3px #6e8fd51c; }
+:global(html[data-theme="dark"]) .enrollmentFilters label { color: #c4d3e7; }
+:global(html[data-theme="dark"]) .enrollmentFilters input,
+:global(html[data-theme="dark"]) .enrollmentFilters select { color: #e0e9f7; background: #101b2d; border-color: #354963; }
+@media (max-width: 700px) {
+  .enrollmentHeading { align-items: stretch; flex-direction: column; }
+  .enrollmentFilters { width: 100%; }
+}
+@media (max-width: 560px) {
+  .enrollmentFilters { grid-template-columns: 1fr; }
 }

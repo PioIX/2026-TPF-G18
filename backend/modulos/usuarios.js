@@ -8,8 +8,8 @@ function validarIdUsuario(valor) {
 async function consultarPerfil(conexion, idUsuario) {
   const [filas] = await conexion.execute(
     `SELECT u.id_usuario, u.username, u.mail, u.foto, u.fecha_registro, u.activo, u.rol,
-            COALESCE(a.nombre, d.nombre, u.username) AS nombre,
-            COALESCE(a.apellido, d.apellido, '') AS apellido,
+            COALESCE(a.nombre, d.nombre, u.nombre) AS nombre,
+            COALESCE(a.apellido, d.apellido, u.apellido, '') AS apellido,
             COALESCE(a.dni, d.dni) AS dni,
             a.fecha_nacimiento, d.especialidad
      FROM Usuarios_1 u
@@ -46,7 +46,8 @@ async function guardarDatosUsuario(conexion, idUsuario, datos) {
     throw error;
   }
   const rol = existentes[0].rol;
-  if (rol !== "ADMIN" && (!nombre || !apellido || nombre.length > 50 || apellido.length > 50)) {
+  const hayDatosDeNombre = Boolean(nombre || apellido);
+  if ((rol !== "ADMIN" || hayDatosDeNombre) && (!nombre || !apellido || nombre.length > 50 || apellido.length > 50)) {
     const error = new Error("Completá nombre y apellido.");
     error.status = 400;
     throw error;
@@ -62,7 +63,11 @@ async function guardarDatosUsuario(conexion, idUsuario, datos) {
     throw error;
   }
 
-  await conexion.execute("UPDATE Usuarios_1 SET username = ?, mail = ? WHERE id_usuario = ?", [username, mail, idUsuario]);
+  if (rol === "ADMIN" && nombre && apellido) {
+    await conexion.execute("UPDATE Usuarios_1 SET username = ?, mail = ?, nombre = ?, apellido = ? WHERE id_usuario = ?", [username, mail, nombre, apellido, idUsuario]);
+  } else {
+    await conexion.execute("UPDATE Usuarios_1 SET username = ?, mail = ? WHERE id_usuario = ?", [username, mail, idUsuario]);
+  }
   if (rol === "ALUMNO") {
     await conexion.execute(
       "UPDATE Alumnos SET nombre = ?, apellido = ?, dni = ?, fecha_nacimiento = ? WHERE id_usuario = ?",
@@ -167,8 +172,8 @@ async function listarUsuarios(req, res, next) {
          u.fecha_registro,
          u.activo,
          u.rol,
-         COALESCE(a.nombre, d.nombre, u.username) AS nombre,
-         COALESCE(a.apellido, d.apellido, '') AS apellido,
+         COALESCE(a.nombre, d.nombre, u.nombre, u.username) AS nombre,
+         COALESCE(a.apellido, d.apellido, u.apellido, '') AS apellido,
          COALESCE(a.dni, d.dni) AS dni,
          a.fecha_nacimiento,
          d.especialidad
@@ -178,8 +183,9 @@ async function listarUsuarios(req, res, next) {
        WHERE u.username LIKE ? OR u.mail LIKE ?
           OR a.nombre LIKE ? OR a.apellido LIKE ?
           OR d.nombre LIKE ? OR d.apellido LIKE ?
+          OR u.nombre LIKE ? OR u.apellido LIKE ?
        ORDER BY u.rol, nombre, apellido`,
-      [busqueda, busqueda, busqueda, busqueda, busqueda, busqueda]
+      [busqueda, busqueda, busqueda, busqueda, busqueda, busqueda, busqueda, busqueda]
     );
 
     res.json({ usuarios });

@@ -48,13 +48,33 @@ function celdaXml(valor, referencia) {
   return `<c r="${referencia}" t="inlineStr"><is><t xml:space="preserve">${xmlSeguro(texto)}</t></is></c>`;
 }
 
-function generarArchivos(nombreHoja, encabezados, filas) {
-  const tabla = [encabezados, ...filas];
+function generarArchivos(nombreHoja, encabezados, filas, resumenDerecho, validaciones) {
+  const tablaPrincipal = [encabezados, ...filas];
+  const tablaDerecha = resumenDerecho ? [resumenDerecho.encabezados, ...resumenDerecho.filas] : [];
+  const alto = Math.max(tablaPrincipal.length, tablaDerecha.length);
+  const separador = resumenDerecho ? [""] : [];
+  const tabla = Array.from({ length: alto }, (_, indice) => [
+    ...(tablaPrincipal[indice] || Array(encabezados.length).fill("")),
+    ...separador,
+    ...(tablaDerecha[indice] || Array(resumenDerecho?.encabezados.length || 0).fill("")),
+  ]);
   const filasXml = tabla.map((fila, indiceFila) => {
     const celdas = fila.map((valor, indiceColumna) => celdaXml(valor, `${columnaExcel(indiceColumna + 1)}${indiceFila + 1}`)).join("");
     return `<row r="${indiceFila + 1}">${celdas}</row>`;
   }).join("");
-  const hoja = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${filasXml}</sheetData></worksheet>`;
+  const validacionesXml = validaciones?.length
+    ? `<dataValidations count="${validaciones.length}">${validaciones.map((validacion) => {
+      const allowBlank = validacion.allowBlank === false ? "0" : "1";
+      if (validacion.tipo === "decimal") {
+        return `<dataValidation type="decimal" operator="between" allowBlank="${allowBlank}" showErrorMessage="1" sqref="${xmlSeguro(validacion.rango)}"><formula1>${validacion.min ?? 0}</formula1><formula2>${validacion.max ?? 10}</formula2></dataValidation>`;
+      }
+      if (validacion.tipo === "custom") {
+        return `<dataValidation type="custom" allowBlank="${allowBlank}" showErrorMessage="1" sqref="${xmlSeguro(validacion.rango)}"><formula1>${xmlSeguro(validacion.formula)}</formula1></dataValidation>`;
+      }
+      return `<dataValidation type="list" allowBlank="${allowBlank}" showErrorMessage="1" sqref="${xmlSeguro(validacion.rango)}"><formula1>"${xmlSeguro(validacion.valores.join(","))}"</formula1></dataValidation>`;
+    }).join("")}</dataValidations>`
+    : "";
+  const hoja = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${filasXml}</sheetData>${validacionesXml}</worksheet>`;
   const libro = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${xmlSeguro(nombreHoja).slice(0, 31)}" sheetId="1" r:id="rId1"/></sheets></workbook>`;
   const tipos = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`;
   const relacionesRaiz = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
@@ -68,8 +88,8 @@ function generarArchivos(nombreHoja, encabezados, filas) {
   ].map(([nombre, contenido]) => ({ nombre: encoder.encode(nombre), datos: encoder.encode(contenido) }));
 }
 
-function crearExcelBlob(nombreHoja, encabezados, filas) {
-  const archivos = generarArchivos(nombreHoja, encabezados, filas);
+function crearExcelBlob(nombreHoja, encabezados, filas, resumenDerecho, validaciones) {
+  const archivos = generarArchivos(nombreHoja, encabezados, filas, resumenDerecho, validaciones);
   const locales = [];
   const centrales = [];
   let offset = 0;
@@ -130,8 +150,8 @@ function crearExcelBlob(nombreHoja, encabezados, filas) {
   return new Blob([combinar([...locales, directorio, eocd])], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 }
 
-export function descargarExcel(nombreArchivo, nombreHoja, encabezados, filas) {
-  const blob = crearExcelBlob(nombreHoja, encabezados, filas);
+export function descargarExcel(nombreArchivo, nombreHoja, encabezados, filas, resumenDerecho, validaciones) {
+  const blob = crearExcelBlob(nombreHoja, encabezados, filas, resumenDerecho, validaciones);
   const url = URL.createObjectURL(blob);
   const enlace = document.createElement("a");
   enlace.href = url;

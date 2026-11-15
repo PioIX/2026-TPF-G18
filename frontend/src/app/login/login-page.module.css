@@ -166,6 +166,7 @@
   gap: 7px;
   color: #555d70;
   cursor: pointer;
+  white-space: nowrap;
 }
 .remember input {
   width: 14px;
@@ -184,6 +185,22 @@
 .forgot:hover {
   text-decoration: underline;
 }
+.adminContacts {
+  display: grid;
+  gap: 8px;
+  margin: -12px 0 22px;
+  padding: 13px 15px;
+  border: 1px solid #dce5f4;
+  border-radius: 9px;
+  color: #4b5c76;
+  background: #f6f8fc;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.adminContacts strong { color: #293c5a; }
+.adminContacts ul { display: grid; gap: 5px; margin: 0; padding-left: 18px; }
+.adminContacts a { color: #344fc5; overflow-wrap: anywhere; }
+.adminContacts [role="alert"] { color: #a62e35; }
 .submit {
   min-height: 48px;
   border: 0;
@@ -219,7 +236,7 @@
 }
 .footer {
   margin: 34px 0 0;
-  color: #9aa0ad;
+  color: #64748b;
   font-size: 11px;
   text-align: center;
 }
@@ -258,4 +275,5 @@
     align-items: flex-start;
     flex-direction: column;
   }
+  .adminContacts { margin-top: -14px; }
 }

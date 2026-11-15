@@ -65,7 +65,7 @@
 .welcome button { display: grid; width: 38px; height: 38px; place-items: center; border: 0; border-radius: 12px; color: #fff; background: linear-gradient(140deg,#4d86d3,#244d92); box-shadow: 0 5px 13px #214d8b30; font-size: 23px; cursor: pointer; transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease; }
 .listTitle > button:hover,
 .welcome button:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 8px 18px #214d8b3b; filter: saturate(1.15); }
-.search { display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 11px; border: 1px solid var(--line); border-radius: 11px; color: #8293a9; background: var(--surface-soft); font-size: 20px; }
+.search { display: flex; align-items: center; gap: 9px; height: 44px; box-sizing: border-box; padding: 0 11px; border: 1px solid var(--line); border-radius: 11px; color: #8293a9; background: var(--surface-soft); font-size: 20px; }
 .search:focus-within { border-color: #75a2dc; box-shadow: 0 0 0 3px #4f83c319; }
 .search input { width: 100%; min-width: 0; border: 0; outline: 0; color: var(--ink); background: transparent; font: inherit; font-size: 11px; }
 .search input::placeholder { color: #8293a9; opacity: 1; }
@@ -76,7 +76,7 @@
 .chatRow:hover { border-color: #e4ebf4; background: #f6f9fd; }
 .chatRow.selected { border-color: #cbdcf3; background: #edf4fd; box-shadow: inset 3px 0 #4c7fc0; }
 .chatSummary { display: grid; flex: 1; gap: 4px; min-width: 0; }
-.chatRow strong { overflow: hidden; color: inherit; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+  .chatRow strong { display: block; color: inherit; font-size: 12px; line-height: 1.3; overflow-wrap: anywhere; white-space: normal; }
 .chatRow small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .chatRow time { flex: 0 0 auto; color: #9ba9ba; font-size: 9px; }
 .emptyList { margin: 0; padding: 28px 18px; color: var(--muted); font-size: 12px; line-height: 1.5; text-align: center; }

@@ -113,3 +113,10 @@
   .hero { padding: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .backLink, .stats article { transition: none; } }
+
+:global(html[data-theme="dark"]) .stats article.statBlue,
+:global(html[data-theme="dark"]) .stats article.statGreen,
+:global(html[data-theme="dark"]) .stats article.statOrange,
+:global(html[data-theme="dark"]) .stats article.statBlue:hover,
+:global(html[data-theme="dark"]) .stats article.statGreen:hover,
+:global(html[data-theme="dark"]) .stats article.statOrange:hover { box-shadow: none; }

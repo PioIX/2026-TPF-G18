@@ -6,11 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import useSocket from "@/hooks/useSocket";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { calcularPromedioNotas } from "@/lib/notas";
 import styles from "./AcademicPage.module.css";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 const RUTAS_POR_ROL = { ALUMNO: "/alumno", DOCENTE: "/docente", ADMIN: "/admin" };
-const ICONOS = { Inicio: "⌂", Materias: "▤", "Gestión académica": "▦", Asistencias: "✓", Calificaciones: "▦", Tareas: "☷", Chat: "◌", Notificaciones: "♧", Perfil: "○" };
 export function colorMateria(idMateria) {
   const id = Number(idMateria);
   const hue = Number.isFinite(id) && id > 0 ? (((id - 1) * 137.508) % 360).toFixed(2) : "210";
@@ -37,6 +38,7 @@ export function useAcademicUser(rolEsperado) {
 export function AcademicLayout({ title, description, usuario, children, links }) {
   const pathname = usePathname();
   const inicio = RUTAS_POR_ROL[usuario?.rol] || "/login";
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [noLeidas, setNoLeidas] = useState(0);
   const { socket } = useSocket(usuario?.id_usuario);
   const navLinks = [
@@ -70,13 +72,16 @@ export function AcademicLayout({ title, description, usuario, children, links })
     return () => socket.off("nueva_notificacion", actualizar);
   }, [socket]);
 
+
   function cerrarSesion() {
     sessionStorage.removeItem("educalink_usuario");
     window.location.href = "/login";
   }
   return (
     <div className={styles.shell}>
-      <motion.aside className={styles.sidebar} initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.38, ease: "easeOut" }}>
+      {menuAbierto && <button className={styles.menuOverlay} type="button" aria-label="Cerrar menú" onClick={() => setMenuAbierto(false)} />}
+      <motion.aside id="menu-principal" className={`${styles.sidebar} ${menuAbierto ? styles.sidebarOpen : styles.sidebarClosed}`} aria-hidden={!menuAbierto} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.38, ease: "easeOut" }}>
+        <button className={styles.menuClose} type="button" aria-label="Cerrar menú" onClick={() => setMenuAbierto(false)}>×</button>
         <Link className={styles.brand} href={inicio}>
           <span className={styles.brandMark}><img className={styles.brandLogoLight} src="/images/educalink-logo-light.png" alt="EducaLink" /><img className={styles.brandLogoDark} src="/images/educalink-logo-dark.png" alt="" /></span>
         </Link>
@@ -85,8 +90,8 @@ export function AcademicLayout({ title, description, usuario, children, links })
           {navLinks.map((link, index) => {
             const activo = pathname === link.href;
             return <motion.div className={styles.navEntry} key={link.href} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.24, delay: index * 0.035, ease: "easeOut" }}>
-              <Link className={`${styles.navLink} ${activo ? styles.navLinkActive : ""}`} href={link.href} aria-current={activo ? "page" : undefined}>
-                <span className={styles.navIcon} aria-hidden="true">{ICONOS[link.label] || "·"}</span><span>{link.label}</span>
+              <Link className={`${styles.navLink} ${activo ? styles.navLinkActive : ""}`} href={link.href} aria-current={activo ? "page" : undefined} onClick={() => setMenuAbierto(false)}>
+                <span>{link.label}</span>
                 {link.href === "/notificaciones" && noLeidas > 0 && <span className={styles.notificationBadge}>{noLeidas > 99 ? "99+" : noLeidas}</span>}
               </Link>
             </motion.div>;
@@ -100,7 +105,7 @@ export function AcademicLayout({ title, description, usuario, children, links })
       </motion.aside>
       <div className={styles.main}>
         <motion.header className={styles.topbar} initial={{ opacity: 0, y: -9 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32, ease: "easeOut" }}>
-          <div className={styles.breadcrumb}>EducaLink <span>/</span> {title}</div>
+          <div className={styles.topbarLeft}><button className={styles.menuToggle} type="button" aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"} aria-expanded={menuAbierto} aria-controls="menu-principal" onClick={() => setMenuAbierto((abierto) => !abierto)}><span /><span /><span /></button><Link className={styles.topbarLogo} href={inicio} aria-label="EducaLink, ir al inicio"><img className={styles.topbarLogoLight} src="/images/educalink-logo-light.png" alt="" /><img className={styles.topbarLogoDark} src="/images/educalink-logo-dark.png" alt="" /></Link></div>
           <div className={styles.topbarRight}><span className={styles.topbarStatus}><i /> Ciclo lectivo 2026</span><ThemeToggle /><Link className={styles.avatarSmall} href="/perfil" aria-label="Ir a mi perfil" title="Mi perfil">{(usuario?.username || "U").slice(0, 1).toUpperCase()}</Link></div>
         </motion.header>
         <motion.main className={styles.content} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.34, delay: 0.06, ease: "easeOut" }}>
@@ -114,9 +119,10 @@ export function AcademicLayout({ title, description, usuario, children, links })
   );
 }
 
-export function AcademicListPage({ rol, title, description, endpoint, dataKey, fields, emptyMessage, display = "cards", summaryType = "", detailHref = "" }) {
+export function AcademicListPage({ rol, title, description, endpoint, dataKey, fields, emptyMessage, display = "cards", summaryType = "", detailHref = "", filtroPorMateria = false }) {
   const usuario = useAcademicUser(rol);
   const [filas, setFilas] = useState([]);
+  const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -131,22 +137,45 @@ export function AcademicListPage({ rol, title, description, endpoint, dataKey, f
     return () => { vigente = false; };
   }, [usuario, endpoint, dataKey]);
 
-  const promedio = filas.length ? (filas.reduce((total, fila) => total + Number(fila.nota || 0), 0) / filas.length).toFixed(2) : "—";
-  const porcentaje = filas.length ? `${Math.round((filas.filter((fila) => fila.estado === "PRESENTE").length / filas.length) * 100)}%` : "—";
-  const resumen = summaryType === "calificaciones" ? [{ label: "Evaluaciones registradas", value: filas.length }, { label: "Promedio general", value: promedio }] : summaryType === "asistencias" ? [{ label: "Registros de asistencia", value: filas.length }, { label: "Presentismo", value: porcentaje }] : [];
-  const valor = (field, fila) => field.format === "curso" ? `${fila.anio}° ${fila.division} · ${fila.orientacion}` : fila[field.key];
-  const badge = (field, value) => field.key === "estado" || field.key === "estado_entrega" ? <span className={`${styles.badge} ${styles[`badge${String(value).replace(/[^a-zA-Z]/g, "")}`] || ""}`}>{value}</span> : value;
+  const materiasDisponibles = [...new Set(filas.map((fila) => fila.materia).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+  const filasVisibles = materiaSeleccionada ? filas.filter((fila) => fila.materia === materiaSeleccionada) : filas;
+  const promedio = calcularPromedioNotas(filasVisibles);
+  const asistenciasPresentes = filasVisibles.filter((fila) => fila.estado === "PRESENTE").length;
+  const porcentaje = filasVisibles.length ? `${Math.round((asistenciasPresentes / filasVisibles.length) * 100)}%` : "—";
+  const faltasTardanzas = filasVisibles.filter((fila) => fila.estado === "AUSENTE" || fila.estado === "TARDE").length;
+  const resumen = summaryType === "calificaciones" ? [{ label: "Evaluaciones registradas", value: filasVisibles.length }, { label: "Promedio numérico", value: promedio }] : summaryType === "asistencias" ? [{ label: "Clases registradas", value: filasVisibles.length }, { label: "Inasistencias / Tardanzas", value: faltasTardanzas }, { label: "Presentismo (%)", value: porcentaje }] : [];
+  const fechaLocal = (value) => {
+    if (!value) return value;
+    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  };
+  const valor = (field, fila) => {
+    if (field.format === "curso") return `${fila.anio}° ${fila.division} · ${fila.orientacion}`;
+    if (field.key === "docentes" && fila.docentes) return [...new Set(String(fila.docentes).split(",").map((docente) => docente.trim()).filter(Boolean))].join(", ");
+    return fila[field.key];
+  };
+  const badge = (field, value) => {
+    if (field.key === "estado" || field.key === "estado_entrega") return <span className={`${styles.badge} ${styles[`badge${String(value).replace(/[^a-zA-Z]/g, "")}`] || ""}`}>{value}</span>;
+    if (field.key === "nota" && summaryType === "calificaciones") {
+      const nota = Number(String(value).replace(",", "."));
+      const claseNota = Number.isFinite(nota) ? (nota >= 6 ? styles.gradeApproved : styles.gradeFailed) : styles.gradeText;
+      return <span className={`${styles.badge} ${claseNota}`}>{value}</span>;
+    }
+    return value;
+  };
 
   return <AcademicLayout title={title} description={description} usuario={usuario} links={rol === "ALUMNO" ? [
     { href: "/alumno", label: "Inicio" }, { href: "/alumno/materias", label: "Materias" }, { href: "/alumno/asistencias", label: "Asistencias" }, { href: "/alumno/calificaciones", label: "Calificaciones" }, { href: "/alumno/tareas", label: "Tareas" }, { href: "/chat", label: "Chat" },
   ] : [
     { href: "/docente", label: "Inicio" }, { href: "/docente/materias", label: "Materias" }, { href: "/docente/asistencias", label: "Asistencias" }, { href: "/docente/calificaciones", label: "Calificaciones" }, { href: "/docente/tareas", label: "Tareas" }, { href: "/chat", label: "Chat" },
   ]}>
-    {resumen.length > 0 && <section className={styles.stats}>{resumen.map((item) => <article className={styles.statCard} key={item.label}><span>{item.label}</span><strong>{item.value}</strong></article>)}</section>}
-    {cargando && <p className={styles.notice}>Cargando…</p>}
+    {resumen.length > 0 && <section className={`${styles.stats} ${summaryType === "asistencias" ? styles.attendanceStats : ""}`}>{resumen.map((item) => <article className={styles.statCard} key={item.label}><span>{item.label}</span><strong>{item.value}</strong></article>)}</section>}
+    {cargando && <LoadingSpinner label="Cargando información…" />}
     {error && <p className={styles.error} role="alert">{error}</p>}
     {!cargando && !error && filas.length === 0 && <p className={styles.empty}><span className={styles.emptyIcon}>▤</span><strong>{emptyMessage}</strong><span>Cuando haya información disponible, aparecerá acá.</span></p>}
-    {!cargando && !error && filas.length > 0 && (display === "table" ? <div className={styles.tableCard}><div className={styles.tableTitle}><div><h2>{summaryType === "calificaciones" ? "Detalle de calificaciones" : "Historial"}</h2><p>{filas.length} registros</p></div></div><div className={styles.tableWrap}><table className={styles.table}><thead><tr>{fields.map((field) => <th key={field.label}>{field.label}</th>)}</tr></thead><tbody>{filas.map((fila, index) => <tr key={fila.id_materia_dictada || fila.id_asistencia || fila.id_calificacion || fila.id_tarea || index}>{fields.map((field) => { const v = valor(field, fila); return <td key={field.label}>{v === null || v === undefined || v === "" ? "—" : badge(field, v)}</td>; })}</tr>)}</tbody></table></div></div> : <section className={styles.courseGrid}>{filas.map((fila, index) => {
+    {!cargando && !error && filas.length > 0 && (display === "table" ? <div className={styles.tableCard}><div className={styles.tableTitle}><div><h2>{summaryType === "calificaciones" ? "Detalle de calificaciones" : "Historial"}</h2><p>{filasVisibles.length} {filasVisibles.length === 1 ? "registro" : "registros"}</p></div>{filtroPorMateria && <label className={styles.tableFilter}>Materia<select aria-label="Filtrar por materia" value={materiaSeleccionada} onChange={(event) => setMateriaSeleccionada(event.target.value)}><option value="">Todas las materias</option>{materiasDisponibles.map((materia) => <option key={materia} value={materia}>{materia}</option>)}</select></label>}</div>{filasVisibles.length ? <div className={styles.tableWrap}><table className={styles.table}><thead><tr>{fields.map((field) => <th key={field.label}>{field.label}</th>)}</tr></thead><tbody>{filasVisibles.map((fila, index) => <tr key={fila.id_asistencia || fila.id_calificacion || fila.id_tarea || fila.id_materia_dictada || index}>{fields.map((field) => { let v = valor(field, fila); if (field.key === "fecha") v = fechaLocal(v); return <td key={field.label}>{v === null || v === undefined || v === "" ? "—" : badge(field, v)}</td>; })}</tr>)}</tbody></table></div> : <p className={styles.empty}>No hay registros para esta materia.</p>}</div> : <section className={styles.courseGrid}>{filas.map((fila, index) => {
       const contenido = <><div className={styles.courseIcon}>▤</div><div className={styles.courseInfo}>{fields.map((field, fieldIndex) => { const v = valor(field, fila); return v !== null && v !== undefined && v !== "" ? <div className={fieldIndex === 0 ? styles.courseName : styles.courseMeta} key={field.label}>{fieldIndex === 0 ? <strong>{v}</strong> : <><span>{field.label}</span><b>{badge(field, v)}</b></>}</div> : null; })}</div><span className={styles.courseArrow}>›</span></>;
       const key = fila.id_materia_dictada || fila.id_asistencia || fila.id_calificacion || fila.id_tarea || index;
       const esMateria = dataKey === "materias" && fila.id_materia_dictada;

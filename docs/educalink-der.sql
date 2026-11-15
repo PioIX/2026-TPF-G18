@@ -36,7 +36,7 @@ CREATE TABLE `Calificaciones` (
   `id_materia_dictada` int(11) NOT NULL,
   `tipo` enum('EXAMEN','TRABAJO','TP','PARCIAL','OTRO') NOT NULL,
   `descripcion` varchar(150) DEFAULT NULL,
-  `nota` decimal(4,2) NOT NULL,
+  `nota` varchar(50) NOT NULL,
   `fecha` date NOT NULL,
   PRIMARY KEY (`id_calificacion`),
   KEY `fk_calificaciones_alumno` (`id_alumno`),
@@ -315,6 +315,8 @@ CREATE TABLE `Usuarios_1` (
   `fecha_registro` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `activo` tinyint(1) DEFAULT '0',
   `rol` enum('ALUMNO','DOCENTE','ADMIN') NOT NULL,
+  `nombre` varchar(50) DEFAULT NULL,
+  `apellido` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`id_usuario`),
   UNIQUE KEY `mail` (`mail`),
   UNIQUE KEY `uq_usuarios_username` (`username`)
